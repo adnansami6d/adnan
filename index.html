@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ফলের প্রদর্শনী</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        h1 { color: #333; margin-bottom: 10px; font-size: 24px; }
+
+        /* টেবিল স্টাইল */
+        .fruit-table {
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-radius: 10px;
+            overflow: hidden;
+            width: 100%;
+            max-width: 900px; /* টেবিলের সর্বোচ্চ প্রস্থ */
+        }
+
+        .fruit-table td {
+            border: 1px solid #eee;
+            padding: 8px 5px;
+            text-align: center;
+            cursor: pointer;
+            width: 20%; /* ৫টি কলামের জন্য ২০% */
+        }
+
+        .fruit-table td:active {
+            background-color: #f9f9f9; /* টাচ করলে হালকা রঙ হবে */
+        }
+
+        .fruit-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        svg { 
+            width: 35px; /* সাইজ কিছুটা কমানো হয়েছে যাতে স্ক্রল না লাগে */
+            height: 35px; 
+            pointer-events: none; 
+        }
+
+        span { 
+            font-size: 12px; 
+            color: #555; 
+            font-weight: 500; 
+            margin-top: 5px; 
+            pointer-events: none; 
+            display: block;
+        }
+
+        @media (max-width: 480px) {
+            svg { width: 30px; height: 30px; }
+            span { font-size: 10px; }
+            .fruit-table td { padding: 5px 2px; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>ফল প্রদর্শনী</h1>
+
+    <table class="fruit-table">
+        <tbody id="fruit-body"></tbody>
+    </table>
+
+    <script>
+        const fruits = [
+            { name: "আপেল", id: "apple", svg: '<circle cx="30" cy="35" r="20" fill="#ff4d4d"/><path d="M30 15 Q32 5 38 10" stroke="#4d2600" stroke-width="3" fill="none"/><path d="M30 15 Q25 10 20 15" fill="#2eb82e"/>' },
+            { name: "কলা", id: "banana", svg: '<path d="M10 20 Q30 60 60 30 Q45 50 15 25" fill="#ffe135" stroke="#e6c200"/>' },
+            { name: "কমলা", id: "orange", svg: '<circle cx="30" cy="30" r="22" fill="#ffa500"/><circle cx="30" cy="12" r="2" fill="#2eb82e"/>' },
+            { name: "আঙুর", id: "grapes", svg: '<circle cx="25" cy="25" r="7" fill="#800080"/><circle cx="35" cy="25" r="7" fill="#800080"/><circle cx="30" cy="35" r="7" fill="#800080"/><circle cx="40" cy="35" r="7" fill="#800080"/><path d="M30 18 V10" stroke="green" stroke-width="2"/>' },
+            { name: "তরমুজ", id: "watermelon", svg: '<path d="M10 30 A 20 20 0 0 0 50 30 Z" fill="#ff5252" stroke="#2e7d32" stroke-width="4"/><circle cx="25" cy="35" r="1" fill="black"/><circle cx="35" cy="35" r="1" fill="black"/>' },
+            { name: "নাশপাতি", id: "pear", svg: '<path d="M30 15 Q45 25 40 45 Q30 55 20 45 Q15 25 30 15" fill="#d4e157"/><path d="M30 15 V10" stroke="#4d2600" stroke-width="2"/>' },
+            { name: "চেরি", id: "cherry", svg: '<circle cx="20" cy="40" r="8" fill="#d50000"/><circle cx="40" cy="40" r="8" fill="#d50000"/><path d="M20 32 Q30 20 40 32" stroke="green" stroke-width="2" fill="none"/>' },
+            { name: "আম", id: "mango", svg: '<path d="M30 15 Q50 20 45 45 Q30 55 15 40 Q15 20 30 15" fill="#ffc107"/><path d="M30 15 L32 10" stroke="green" stroke-width="2"/>' },
+            { name: "আনারস", id: "pineapple", svg: '<ellipse cx="30" cy="40" rx="15" ry="20" fill="#fbc02d"/><path d="M30 20 L25 5 L35 5 Z" fill="green"/>' },
+            { name: "স্ট্রবেরি", id: "strawberry", svg: '<path d="M30 50 Q10 45 15 20 Q30 10 45 20 Q50 45 30 50" fill="#e91e63"/><path d="M25 15 Q30 5 35 15" fill="green"/><circle cx="25" cy="30" r="1" fill="white"/>' },
+            { name: "পেঁপে", id: "papaya", svg: '<ellipse cx="30" cy="35" rx="12" ry="22" fill="#ffb74d"/><path d="M30 13 V8" stroke="green" stroke-width="2"/>' },
+            { name: "লেবু", id: "lemon", svg: '<ellipse cx="30" cy="30" rx="20" ry="14" fill="#fff176"/>' },
+            { name: "ডালিম", id: "pomegranate", svg: '<circle cx="30" cy="35" r="18" fill="#b71c1c"/><path d="M25 17 L30 12 L35 17" fill="#b71c1c"/>' },
+            { name: "পিচ", id: "peach", svg: '<circle cx="30" cy="35" r="18" fill="#ffab91"/><path d="M30 17 Q25 12 20 17" fill="green"/>' },
+            { name: "ব্লুবেরি", id: "blueberry", svg: '<circle cx="30" cy="30" r="15" fill="#3f51b5"/><path d="M28 15 L32 15" stroke="black" stroke-width="1"/>' },
+            { name: "কিউই", id: "kiwi", svg: '<ellipse cx="30" cy="30" rx="20" ry="15" fill="#9e9d24"/><circle cx="30" cy="30" r="5" fill="#e6ee9c"/>' },
+            { name: "নারকেল", id: "coconut", svg: '<circle cx="30" cy="30" r="18" fill="#795548"/><circle cx="25" cy="25" r="2" fill="#3e2723"/><circle cx="35" cy="25" r="2" fill="#3e2723"/>' },
+            { name: "লিচু", id: "lychee", svg: '<circle cx="30" cy="30" r="15" fill="#ef5350" stroke="#b71c1c" stroke-dasharray="2,1"/><path d="M30 15 V10" stroke="green" stroke-width="2"/>' },
+            { name: "পেয়ারা", id: "guava", svg: '<circle cx="30" cy="35" r="18" fill="#8bc34a"/><circle cx="30" cy="17" r="3" fill="#558b2f"/>' },
+            { name: "ড্রাগন", id: "dragon", svg: '<ellipse cx="30" cy="35" rx="15" ry="20" fill="#ec407a"/><path d="M20 25 L15 15 M40 25 L45 15" stroke="#9ccc65" stroke-width="3"/>' }
+        ];
+
+        let coconutCount = 0;
+        let isLocked = false;
+        const tableBody = document.getElementById('fruit-body');
+        const columns = 4; // প্রতি লাইনে ৪টি ফল থাকবে (যাতে স্ক্রল না লাগে)
+
+        for (let i = 0; i < fruits.length; i += columns) {
+            const row = document.createElement('tr');
+            
+            for (let j = 0; j < columns; j++) {
+                const fruitIndex = i + j;
+                const td = document.createElement('td');
+                
+                if (fruitIndex < fruits.length) {
+                    const fruit = fruits[fruitIndex];
+                    td.innerHTML = `
+                        <div class="fruit-content">
+                            <svg viewBox="0 0 60 60">${fruit.svg}</svg>
+                            <span>${fruit.name}</span>
+                        </div>`;
+                    
+                    td.addEventListener('click', () => {
+                        if (isLocked) return;
+                        if (fruit.id === "coconut") {
+                            coconutCount++;
+                            if (coconutCount >= 30) window.location.href = 'pass.html';
+                        } else {
+                            isLocked = true;
+                        }
+                    });
+                }
+                row.appendChild(td);
+            }
+            tableBody.appendChild(row);
+        }
+    </script>
+</body>
+</html>

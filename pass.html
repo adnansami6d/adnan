@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced ID Database</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --accent: #4cc9f0;
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-main: #2b2d42;
+            --text-sub: #8d99ae;
+            --success: #4caf50;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #121212;
+                --card-bg: #1e1e1e;
+                --text-main: #e0e0e0;
+                --text-sub: #a0a0a0;
+            }
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .container { max-width: 600px; margin: auto; }
+
+        header { text-align: center; margin-bottom: 30px; }
+        h2 { font-weight: 800; letter-spacing: -0.5px; color: var(--primary); }
+
+        .search-box {
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        input, select {
+            border: 2px solid #eee;
+            border-radius: 10px;
+            padding: 10px 15px;
+            outline: none;
+            font-size: 14px;
+            transition: 0.3s;
+            background: var(--card-bg);
+            color: var(--text-main);
+        }
+
+        input:focus { border-color: var(--primary); }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+            animation: slideIn 0.4s ease forwards;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .type-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            font-size: 10px;
+            font-weight: bold;
+            border-bottom-left-radius: 12px;
+            text-transform: uppercase;
+        }
+
+        .name-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 5px; }
+        .sub-text { color: var(--text-sub); font-size: 0.9rem; margin-bottom: 15px; }
+
+        .details-grid {
+            display: grid;
+            gap: 10px;
+            margin-top: 15px;
+            border-top: 1px dashed #eee;
+            padding-top: 15px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.03);
+            padding: 10px 14px;
+            border-radius: 10px;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .copy-btn:active { transform: scale(0.9); }
+        .copy-btn.copied { background: var(--success); color: white; border-color: var(--success); }
+
+        /* Toast Message */
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 13px;
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h2>ID Manager Pro</h2>
+    </header>
+
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search name..." oninput="filterData()" style="flex: 2;">
+        <select id="categoryFilter" onchange="filterData()" style="flex: 1;">
+            <option value="">All</option>
+        </select>
+    </div>
+
+    <div id="loader" style="text-align: center; opacity: 0.6;">Connecting to database...</div>
+    <div id="displayArea"></div>
+</div>
+
+<div id="toast">Copied to clipboard!</div>
+
+<script>
+    const SHEET_ID = '1JmqZZMSlk9HWZXvHFj77jnumYlP-ay24f96Mt0ucTlo';
+    const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
+
+    let allData = [];
+
+    function init() {
+        fetch(SHEET_URL)
+        .then(res => res.text())
+        .then(csvText => {
+            Papa.parse(csvText, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    allData = results.data.filter(row => row.id_name); 
+                    setupCategories();
+                    renderCards(allData);
+                    document.getElementById('loader').style.display = 'none';
+                }
+            });
+        });
+    }
+
+    function setupCategories() {
+        const types = [...new Set(allData.map(item => item.id_type))].filter(Boolean);
+        const filter = document.getElementById('categoryFilter');
+        types.forEach(type => {
+            const opt = document.createElement('option');
+            opt.value = type; opt.textContent = type; filter.appendChild(opt);
+        });
+    }
+
+    function renderCards(data) {
+        const area = document.getElementById('displayArea');
+        area.innerHTML = '';
+        data.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.animationDelay = `${index * 0.05}s`;
+            card.innerHTML = `
+                <span class="type-badge">${item.id_type}</span>
+                <div class="name-title">${item.id_name}</div>
+                <div class="sub-text">${item.email || 'No Email'}</div>
+                
+                <div class="details-grid">
+                    ${createDataRow('Email', item.email)}
+                    ${createDataRow('Pass', item.pass)}
+                    ${createDataRow('Phone', item.phone_num)}
+                    <div style="font-size: 12px; color: var(--text-sub); padding: 5px;">
+                        <strong>Note:</strong> ${item.e_info || 'N/A'}
+                    </div>
+                </div>`;
+            area.appendChild(card);
+        });
+    }
+
+    function createDataRow(label, value) {
+        if(!value || value === 'N/A') return '';
+        return `
+            <div class="data-row">
+                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">
+                    <small style="display:block; color:var(--text-sub); font-size:10px;">${label}</small>
+                    <span style="font-size:13px; font-weight:500;">${value}</span>
+                </div>
+                <button class="copy-btn" onclick="copyText(this, '${value}')">Copy</button>
+            </div>`;
+    }
+
+    function filterData() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const cat = document.getElementById('categoryFilter').value;
+        const filtered = allData.filter(item => 
+            (item.id_name.toLowerCase().includes(query)) && 
+            (cat === "" || item.id_type === cat)
+        );
+        renderCards(filtered);
+    }
+
+    function copyText(btn, text) {
+        navigator.clipboard.writeText(text);
+        const originalText = btn.innerText;
+        btn.innerText = '✓';
+        btn.classList.add('copied');
+        
+        const toast = document.getElementById('toast');
+        toast.style.display = 'block';
+        
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.classList.remove('copied');
+            toast.style.display = 'none';
+        }, 1500);
+    }
+
+    init();
+</script>
+
+</body>
+</html>

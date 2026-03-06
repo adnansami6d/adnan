@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>মোবাইল ব্যানার পোর্টাল</title>
+    <style>
+        /* CSS: ডিজাইন সেকশন */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            width: 100%;
+            padding: 20px;
+            text-align: center;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        /* ব্যানার কন্টেইনার */
+        .banner-container {
+            width: 95%;
+            max-width: 500px; /* মোবাইল ফ্রেন্ডলি উইডথ */
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-bottom: 30px;
+        }
+
+        /* একক ব্যানার কার্ড */
+        .banner-card {
+            width: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            transition: transform 0.2s;
+            background: #fff;
+        }
+
+        .banner-card:active {
+            transform: scale(0.98);
+        }
+
+        .banner-card img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: cover;
+        }
+
+        .banner-info {
+            padding: 12px;
+            text-align: center;
+            font-weight: bold;
+            background: #fff;
+            color: #555;
+            font-size: 14px;
+        }
+
+        /* ফুটার */
+        footer {
+            margin-top: auto;
+            padding: 20px;
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h2>আমার ড্যাশবোর্ড</h2>
+    </header>
+
+    <div class="banner-container" id="bannerWrapper">
+        </div>
+
+    <footer>
+        &copy; 2026 মোবাইল এক্সক্লুসিভ ডিজাইন
+    </footer>
+
+    <script>
+        /* JavaScript: ডাটা সেকশন (এখান থেকে ব্যানার পরিবর্তন করুন) */
+        
+        const bannerData = [
+            {
+                image: "https://picsum.photos/seed/tech/800/400", // ডামি ইমেজ
+                link: "https://www.zefoy.com",
+                title: "Zefoy - ভিজিটর ১"
+            },
+            {
+                image: "https://picsum.photos/seed/mobile/800/400", // ডামি ইমেজ
+                link: "https://www.zefoy.com",
+                title: "Zefoy - ভিজিটর ২"
+            },
+            {
+                image: "https://picsum.photos/seed/web/800/400", // ডামি ইমেজ
+                link: "https://www.zefoy.com",
+                title: "Zefoy - ভিজিটর ৩"
+            }
+        ];
+
+        // ব্যানার রেন্ডার করার ফাংশন
+        const bannerWrapper = document.getElementById('bannerWrapper');
+
+        bannerData.forEach(data => {
+            const anchor = document.createElement('a');
+            anchor.href = data.link;
+            anchor.target = "_blank"; // নতুন ট্যাবে ওপেন হবে
+            anchor.style.textDecoration = "none";
+
+            anchor.innerHTML = `
+                <div class="banner-card">
+                    <img src="${data.image}" alt="Banner">
+                    <div class="banner-info">${data.title}</div>
+                </div>
+            `;
+            
+            bannerWrapper.appendChild(anchor);
+        });
+    </script>
+
+</body>
+</html>

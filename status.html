@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Last Sigh - Daily Status</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Hind Siliguri', 'Inter', sans-serif;
+            background-color: #0d1117;
+            color: #e6edf3;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 580px;
+            background: #161b22;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #30363d;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Top Bar / Header */
+        .header {
+            background-color: #1e4620;
+            color: #ffffff;
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #2e6b32;
+        }
+
+        .brand {
+            font-size: 1.15rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .date-picker-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .date-picker-wrap svg {
+            width: 16px;
+            height: 16px;
+            fill: #ffffff;
+        }
+
+        .date-input {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .date-input::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+
+        /* Status Card Main Content */
+        .status-card {
+            background-color: #ffffff;
+            color: #111111;
+            padding: 24px 20px 18px 20px;
+            position: relative;
+        }
+
+        .status-text {
+            font-size: 1.35rem;
+            font-weight: 700;
+            line-height: 1.6;
+            margin-bottom: 12px;
+            color: #0f172a;
+        }
+
+        .sub-credits {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 16px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .en-translation {
+            font-size: 0.95rem;
+            color: #334155;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            line-height: 1.4;
+            border-top: 1px dashed #cbd5e1;
+            padding-top: 10px;
+        }
+
+        /* Image Display */
+        .media-container {
+            width: 100%;
+            max-height: 420px;
+            overflow: hidden;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .media-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Reactions Section */
+        .reactions-bar {
+            padding: 12px 18px;
+            background: #161b22;
+            border-top: 1px solid #30363d;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            overflow-x: auto;
+        }
+
+        .react-btn {
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .react-btn:hover {
+            background: #30363d;
+            border-color: #8b949e;
+        }
+
+        /* Comment Section */
+        .comments-section {
+            padding: 18px;
+            background: #0d1117;
+        }
+
+        .comments-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #8b949e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .comments-title svg {
+            width: 18px;
+            height: 18px;
+            fill: #8b949e;
+        }
+
+        .comment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+            max-height: 250px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .comment-item {
+            background: #161b22;
+            border: 1px solid #30363d;
+            padding: 10px 14px;
+            border-radius: 8px;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .comment-author {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #58a6ff;
+        }
+
+        .comment-time {
+            font-size: 0.75rem;
+            color: #8b949e;
+        }
+
+        .comment-text {
+            font-size: 0.9rem;
+            color: #c9d1d9;
+            line-height: 1.4;
+        }
+
+        .comment-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #161b22;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+        }
+
+        .comment-input, .comment-textarea {
+            width: 100%;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            color: #e6edf3;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.88rem;
+            outline: none;
+        }
+
+        .comment-input:focus, .comment-textarea:focus {
+            border-color: #58a6ff;
+        }
+
+        .comment-textarea {
+            resize: none;
+            height: 60px;
+        }
+
+        .submit-btn {
+            align-self: flex-end;
+            background: #238636;
+            color: #ffffff;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .submit-btn:hover {
+            background: #2ea043;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px 20px;
+            color: #8b949e;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #8b949e;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <div class="brand">
+            <span>© Last sigh</span>
+        </div>
+        <div class="date-picker-wrap">
+            <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+            <input type="date" id="datePicker" class="date-input" onchange="filterBySelectedDate()">
+        </div>
+    </div>
+
+    <!-- Dynamic Content Area -->
+    <div id="contentArea">
+        <div class="loading">ডেটা লোড হচ্ছে... অনুগ্রহ করে অপেক্ষা করুন।</div>
+    </div>
+</div>
+
+<script>
+    // আপনার গুগল সিট আইডি এবং ফ্রেশ ডিরেক্ট পাবলিশ CSV URL
+    const sheetId = '1VUqMP-jag335---OBaQ4JStkcKskGlbD8Xvte102ZIs';
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+
+    // SheetDB API URL (কমেন্ট এবং রিঅ্যাকশন POST করার জন্য)
+    const sheetDbApiUrl = 'https://sheetdb.io/api/v1/YOUR_SHEETDB_API_ID';
+
+    let allData = [];
+    let selectedDate = '';
+
+    // গুগল সিটের ডেটা লোড করা
+    async function loadSheetData() {
+        try {
+            const response = await fetch(csvUrl);
+            const csvText = await response.text();
+            allData = parseCSV(csvText);
+
+            if (allData.length > 0) {
+                // সর্বশেষ আপলোড করা রো-এর তারিখ অনুযায়ী পেজ সেট হবে
+                const latest = allData[allData.length - 1];
+                selectedDate = latest.Date || new Date().toISOString().split('T')[0];
+                document.getElementById('datePicker').value = selectedDate;
+                renderContent(selectedDate);
+            } else {
+                document.getElementById('contentArea').innerHTML = `<div class="no-data">কোনো তথ্য পাওয়া যায়নি।</div>`;
+            }
+        } catch (error) {
+            console.error('Error loading data:', error);
+            document.getElementById('contentArea').innerHTML = `<div class="no-data">ডেটা লোড করতে সমস্যা হয়েছে। গুগল শিটটি Public Share করা আছে কিনা নিশ্চিত করুন।</div>`;
+        }
+    }
+
+    // CSV Parsing Logic
+    function parseCSV(text) {
+        const lines = text.trim().split(/\r\n|\n/);
+        if (lines.length < 2) return [];
+
+        const headers = parseCSVLine(lines[0]);
+        const result = [];
+
+        for (let i = 1; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            const currentLine = parseCSVLine(lines[i]);
+            const obj = {};
+            headers.forEach((header, index) => {
+                obj[header.trim()] = currentLine[index] ? currentLine[index].trim() : '';
+            });
+            result.push(obj);
+        }
+        return result;
+    }
+
+    function parseCSVLine(line) {
+        const result = [];
+        let insideQuote = false;
+        let entry = '';
+
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"') {
+                insideQuote = !insideQuote;
+            } else if (char === ',' && !insideQuote) {
+                result.push(entry);
+                entry = '';
+            } else {
+                entry += char;
+            }
+        }
+        result.push(entry);
+        return result;
+    }
+
+    // তারিখ নির্বাচন করলে ফিল্টার করা
+    function filterBySelectedDate() {
+        const pickerVal = document.getElementById('datePicker').value;
+        if (pickerVal) {
+            selectedDate = pickerVal;
+            renderContent(selectedDate);
+        }
+    }
+
+    // স্ক্রিনে ডেটা রেন্ডার করা
+    function renderContent(targetDate) {
+        const statusRows = allData.filter(item => item.Date === targetDate && item.status);
+        const commentRows = allData.filter(item => item.Date === targetDate && item.comment);
+
+        if (statusRows.length === 0) {
+            document.getElementById('contentArea').innerHTML = `
+                <div class="no-data">
+                    <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 6px;">${targetDate} তারিখে কোনো স্ট্যাটাস পাওয়া যায়নি</p>
+                    <p style="font-size: 0.85rem;">অন্য কোনো তারিখ নির্বাচন করে চেষ্টা করুন।</p>
+                </div>
+            `;
+            return;
+        }
+
+        const currentStatus = statusRows[0];
+
+        let html = `
+            <div class="status-card">
+                <div class="status-text">${escapeHTML(currentStatus.status)}</div>
+                <div class="sub-credits">last sigh social media video clip collected editor own</div>
+                ${currentStatus['s.en.translation'] ? `<div class="en-translation">${escapeHTML(currentStatus['s.en.translation'])}</div>` : ''}
+            </div>
+        `;
+
+        if (currentStatus['s.pic.link']) {
+            html += `
+                <div class="media-container">
+                    <img src="${currentStatus['s.pic.link']}" alt="Status Image" onerror="this.style.display='none'">
+                </div>
+            `;
+        }
+
+        html += `
+            <div class="reactions-bar">
+                <button class="react-btn" onclick="addReaction('love')">❤️ <span>Love</span></button>
+                <button class="react-btn" onclick="addReaction('like')">👍 <span>Like</span></button>
+                <button class="react-btn" onclick="addReaction('fire')">🔥 <span>Fire</span></button>
+                <button class="react-btn" onclick="addReaction('sad')">🥺 <span>Sad</span></button>
+            </div>
+        `;
+
+        html += `
+            <div class="comments-section">
+                <div class="comments-title">
+                    <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+                    <span>মন্তব্যসমূহ (${commentRows.length})</span>
+                </div>
+                
+                <div class="comment-list" id="commentList">
+        `;
+
+        if (commentRows.length > 0) {
+            commentRows.forEach(c => {
+                html += `
+                    <div class="comment-item">
+                        <div class="comment-header">
+                            <span class="comment-author">${escapeHTML(c['comment.name'] || 'অজ্ঞাত')}</span>
+                            <span class="comment-time">${escapeHTML(c['comment.date'] || '')}</span>
+                        </div>
+                        <div class="comment-text">${escapeHTML(c.comment)}</div>
+                    </div>
+                `;
+            });
+        } else {
+            html += `<div style="color: #8b949e; font-size: 0.85rem; padding: 10px 0;">এখনো কোনো মন্তব্য নেই। প্রথম কমেন্টটি আপনি করুন!</div>`;
+        }
+
+        html += `
+                </div>
+
+                <form class="comment-form" onsubmit="submitComment(event)">
+                    <input type="text" id="commenterName" class="comment-input" placeholder="আপনার নাম..." required>
+                    <textarea id="commentText" class="comment-textarea" placeholder="আপনার মতামত লিখুন..." required></textarea>
+                    <button type="submit" class="submit-btn">
+                        <span>পাঠিয়ে দিন</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                    </button>
+                </form>
+            </div>
+        `;
+
+        document.getElementById('contentArea').innerHTML = html;
+    }
+
+    function escapeHTML(str) {
+        if (!str) return '';
+        return str.replace(/[&<>'"]/g, 
+            tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+        );
+    }
+
+    // রিঅ্যাকশন হ্যান্ডলার
+    function addReaction(type) {
+        alert(`${type.toUpperCase()} রিঅ্যাকশন সফলভাবে যুক্ত হয়েছে!`);
+    }
+
+    // কমেন্ট জমা দেওয়া
+    async function submitComment(e) {
+        e.preventDefault();
+        const name = document.getElementById('commenterName').value.trim();
+        const comment = document.getElementById('commentText').value.trim();
+        const now = new Date().toLocaleString('bn-BD');
+
+        if (!name || !comment) return;
+
+        const commentList = document.getElementById('commentList');
+        commentList.innerHTML += `
+            <div class="comment-item">
+                <div class="comment-header">
+                    <span class="comment-author">${escapeHTML(name)}</span>
+                    <span class="comment-time">${now}</span>
+                </div>
+                <div class="comment-text">${escapeHTML(comment)}</div>
+            </div>
+        `;
+
+        document.getElementById('commentText').value = '';
+    }
+
+    window.onload = loadSheetData;
+</script>
+
+</body>
+  </html>

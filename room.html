@@ -3,47 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PeerJS Test</title>
-    <!-- PeerJS Library -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <title>GitHub PeerJS Connection Test</title>
+    <!-- HTTPS Supported PeerJS CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f4f4f9; }
+        .box { background: white; max-width: 400px; margin: 0 auto; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        input { width: 80%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; text-align: center; font-size: 16px; }
+        button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover { background: #218838; }
+        #status { font-weight: bold; color: #007bff; margin-top: 15px; }
+        #error { color: red; font-size: 14px; margin-top: 10px; }
+    </style>
 </head>
-<body style="font-family: sans-serif; text-align: center; padding: 20px;">
+<body>
 
-    <h2>সার্ভার ছাড়া ডিরেক্ট কানেকশন টেস্ট</h2>
-    <p>আপনার আইডেন্টিটি কোড: <b id="my-id" style="color: red;">তৈরি হচ্ছে...</b></p>
+    <div class="box">
+        <h2>লুডো অনলাইন পিয়ার টেস্ট</h2>
+        <p>আপনার রুম কোড: <br><b id="my-id" style="color: #d9534f; font-size: 22px;">তৈরি হচ্ছে...</b></p>
 
-    <br>
-    <input type="text" id="other-id-input" placeholder="অপরজনের আইডি দিন">
-    <button onclick="connectToPeer()">কানেক্ট করুন</button>
+        <hr style="margin: 20px 0;">
 
-    <h3 id="status" style="margin-top: 20px; color: green;"></h3>
+        <input type="text" id="other-id-input" placeholder="অপনেন্টের রুম কোড দিন">
+        <br>
+        <button onclick="connectToPeer()">কানেক্ট করুন</button>
+
+        <div id="status">স্ট্যাটাস: অপেক্ষা করা হচ্ছে...</div>
+        <div id="error"></div>
+    </div>
 
     <script>
-        // ১. একটি র্যান্ডম আইডি নিয়ে পিয়ার জেনারেট করা
-        const myRandomId = 'ludo-' + Math.floor(1000 + Math.random() * 9000);
-        const peer = new Peer(myRandomId);
-
-        peer.on('open', (id) => {
-            document.getElementById('my-id').innerText = id;
+        // Google STUN Server ব্যবহার করা হচ্ছে যেন GitHub Pages এ কানেক্ট হয়
+        const peer = new Peer('ludo-' + Math.floor(100000 + Math.random() * 900000), {
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' }
+                ]
+            },
+            secure: true
         });
 
-        // ২. অপনেন্ট কানেক্ট করলে ডাটা রিসিভ করা
+        // ১. আইডি তৈরি হলে স্ক্রিনে দেখানো
+        peer.on('open', (id) => {
+            document.getElementById('my-id').innerText = id;
+            document.getElementById('status').innerText = "স্ট্যাটাস: আপনার কোড তৈরি হয়েছে!";
+        });
+
+        // ২. কোনো এরর হলে স্ক্রিনে দেখানো
+        peer.on('error', (err) => {
+            console.error("PeerJS Error:", err);
+            document.getElementById('error').innerText = "এরর টাইপ: " + err.type;
+        });
+
+        // ৩. অন্য কোনো প্লেয়ার এই আইডিতে কানেক্ট করলে
         peer.on('connection', (conn) => {
-            document.getElementById('status').innerText = "অন্য প্লেয়ার আপনার সাথে কানেক্ট হয়েছে!";
+            document.getElementById('status').innerText = "স্ট্যাটাস: অন্য প্লেয়ার কানেক্ট হয়েছে!";
             
             conn.on('data', (data) => {
                 alert("মেসেজ এসেছে: " + data);
             });
         });
 
-        // ৩. অন্য প্লেয়ারের আইডিতে কানেক্ট করা
+        // ৪. অপনেন্টের কোড দিয়ে কানেক্ট করা
         function connectToPeer() {
             const otherId = document.getElementById('other-id-input').value.trim();
+            if (!otherId) {
+                alert("দয়া করে অপনেন্টের আইডি কোডটি লিখুন!");
+                return;
+            }
+
+            document.getElementById('status').innerText = "স্ট্যাটাস: কানেক্ট করার চেষ্টা চলছে...";
             const conn = peer.connect(otherId);
 
             conn.on('open', () => {
-                document.getElementById('status').innerText = "কানেক্টেড! টেস্ট মেসেজ পাঠানো হচ্ছে...";
-                conn.send("Hello! আমি কানেক্ট হয়েছি।");
+                document.getElementById('status').innerText = "স্ট্যাটাস: সফলভাবে কানেক্টেড!";
+                conn.send("Hello! আমি আপনার গেমে যুক্ত হয়েছি।");
+            });
+
+            conn.on('error', (err) => {
+                document.getElementById('error').innerText = "কানেকশন এরর: " + err;
             });
         }
     </script>

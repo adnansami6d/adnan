@@ -319,3 +319,29 @@ body {
 .left   { transform: rotateY(-90deg) translateZ(25px); }
 .top    { transform: rotateX(90deg) translateZ(25px); }
 .bottom { transform: rotateX(-90deg) translateZ(25px); }
+/* ==========================================
+   ৮. অ্যানিমেশন ও টার্ন হাইলাইট স্টাইল (অতিরিক্ত যুক্ত করা হলো)
+   ========================================== */
+
+/* যার চাল তার ডাইস অনবরত লাফানোর অ্যানিমেশন */
+.dice-container.turn-bounce {
+    animation: diceBounce 0.8s infinite alternate ease-in-out;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+    border-radius: 50%;
+}
+
+@keyframes diceBounce {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.15) translateY(-6px); }
+}
+
+/* চাল দেওয়ার উপযোগী গুটিগুলো লাফানোর অ্যানিমেশন */
+.token.token-bounce {
+    animation: tokenBounce 0.6s infinite alternate ease-in-out;
+}
+
+@keyframes tokenBounce {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-8px); }
+    }
+    

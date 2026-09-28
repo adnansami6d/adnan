@@ -1,5 +1,19 @@
 /* ===================================================
-   ১. সাউন্ড ও গ্লোবাল ভ্যারিয়েবল (আপনার মূল কোড অক্ষত)
+   ১. অটোমেটিক PeerJS লাইব্রেরি লোডার
+   =================================================== */
+(function loadPeerJSScript() {
+    if (typeof Peer === 'undefined') {
+        const script = document.createElement('script');
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js";
+        script.onload = () => { initP2P(); };
+        document.head.appendChild(script);
+    } else {
+        initP2P();
+    }
+})();
+
+/* ===================================================
+   ২. সাউন্ড ও গ্লোবাল ভ্যারিয়েবল
    =================================================== */
 const soundDiceRoll = new Audio('dice-roll.mp3');
 const soundSix = new Audio('six.mp3');
@@ -9,7 +23,6 @@ const eatSounds = [
     new Audio('eat2.mp3'),
     new Audio('eat3.mp3')
 ];
-
 const soundHome = new Audio('home.mp3');
 const soundWin = new Audio('win.mp3');
 
@@ -61,23 +74,58 @@ const tokens = {
 };
 
 /* ===================================================
-   ২. অনলাইন PeerJS নেটওয়ার্ক সিস্টেম (নতুন যুক্ত করা হয়েছে)
+   ৩. পিয়ার-টু-পিয়ার (P2P) কানেকশন এবং স্ট্যাটাস বার
    =================================================== */
-const roomId = localStorage.getItem('ludo_room_id') || 'room-101';
+const roomId = localStorage.getItem('ludo_room_id') || 'default_room';
 const myRole = localStorage.getItem('ludo_player_role') || 'red'; 
 const isHost = localStorage.getItem('ludo_is_host') === 'true';
 
 let peer = null;
 let conn = null;
 
+function createStatusUI() {
+    if (document.getElementById('p2p-status-bar')) return;
+    const statusBar = document.createElement('div');
+    statusBar.id = 'p2p-status-bar';
+    statusBar.style.cssText = `
+        position: fixed; top: 10px; left: 50%; transform: translateX(-50%);
+        background: rgba(0,0,0,0.8); color: #fff; padding: 6px 16px;
+        border-radius: 20px; font-size: 13px; font-weight: bold; z-index: 1000;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3); text-align: center;
+    `;
+    statusBar.innerHTML = '🔴 অপনেন্টের সাথে কানেক্ট হচ্ছে...';
+    document.body.appendChild(statusBar);
+}
+
+function updateStatusUI(isConnected) {
+    const statusBar = document.getElementById('p2p-status-bar');
+    if (statusBar) {
+        if (isConnected) {
+            statusBar.style.background = '#28a745';
+            statusBar.innerHTML = `🟢 প্লেয়ার কানেক্টেড (${myRole === 'red' ? 'লাল' : 'হলুদ'})`;
+        } else {
+            statusBar.style.background = '#dc3545';
+            statusBar.innerHTML = '🔴 সংযোগ বিচ্ছিন্ন! ওয়েট করুন...';
+        }
+    }
+       }
 function initP2P() {
-    const peerId = isHost ? 'ludo-' + roomId : 'ludo-guest-' + Math.floor(Math.random() * 1000);
-    peer = new Peer(peerId, { secure: true });
+    createStatusUI();
+    const peerId = isHost ? 'ludo-' + roomId : 'ludo-guest-' + Math.floor(Math.random() * 10000);
+    
+    peer = new Peer(peerId, {
+        config: {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        },
+        secure: true
+    });
 
     peer.on('open', () => {
         if (!isHost && roomId) {
-            conn = peer.connect('ludo-' + roomId);
-            setupConnectionListeners();
+            connectToHost();
         }
     });
 
@@ -85,16 +133,47 @@ function initP2P() {
         conn = incoming;
         setupConnectionListeners();
     });
+
+    peer.on('error', (err) => {
+        console.log("Peer Error:", err);
+        setTimeout(initP2P, 3000); // এরর হলে ৩ সেকেন্ড পর আবার চেষ্টা করবে
+    });
+}
+
+function connectToHost() {
+    const hostId = 'ludo-' + roomId;
+    conn = peer.connect(hostId);
+    
+    conn.on('open', () => {
+        setupConnectionListeners();
+    });
+
+    conn.on('error', () => {
+        setTimeout(connectToHost, 2000);
+    });
 }
 
 function setupConnectionListeners() {
     if (!conn) return;
+    updateStatusUI(true);
+
     conn.on('data', (data) => {
         if (data.type === 'DICE_ROLLED') {
             processDiceRoll(data.diceId, data.value, true);
         } else if (data.type === 'TOKEN_CLICKED') {
             handleTokenClick(data.tokenId, true);
+        } else if (data.type === 'TURN_SWITCHED') {
+            currentPlayer = data.nextPlayer;
+            hasRolled = false;
+            isMoving = false;
+            consecutiveSixes = 0;
+            updateDiceControls();
         }
+    });
+
+    conn.on('close', () => {
+        updateStatusUI(false);
+        if (!isHost) connectToHost();
     });
 }
 
@@ -102,10 +181,9 @@ function sendP2PData(data) {
     if (conn && conn.open) {
         conn.send(data);
     }
-}
-
+           }
 /* ===================================================
-   ৩. গেমের পেজ লোড ও ইভেন্ট সেটিংস
+   ৪. গেম ইনিশিয়ালাইজেশন
    =================================================== */
 window.addEventListener('DOMContentLoaded', () => {
     Object.keys(tokens).forEach(tokenId => {
@@ -116,7 +194,6 @@ window.addEventListener('DOMContentLoaded', () => {
     });
     setupTokenEvents();
     updateDiceControls();
-    initP2P();
 });
 
 function setupTokenEvents() {
@@ -162,12 +239,10 @@ function setTokensBounce(tokenIds, shouldActive) {
 }
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-/* ===================================================
-   ৪. ৩ডি গুটি হাঁটার মূল অ্যানিমেশন (আপনার আসল কোড অক্ষত)
+   /* ===================================================
+   ৫. ৩ডি গুটি হাঁটার মূল অ্যানিমেশন (অনলাইন সিঙ্ক সহ)
    =================================================== */
 async function handleTokenClick(tokenId, isRemote = false) {
-    // অনলাইনে নিজের টার্ন ছাড়া ক্লিক গ্রহণ করা হবে না
     if (!isRemote && currentPlayer !== myRole) return;
     if (!hasRolled || isMoving) return;
 
@@ -177,7 +252,6 @@ async function handleTokenClick(tokenId, isRemote = false) {
     const moveableTokens = getMoveableTokens();
     if (!moveableTokens.includes(tokenId)) return;
 
-    // লোকাল ক্লিক হলে ডাটা অপর প্লেয়ারের ব্রাউজারে পাঠানো
     if (!isRemote) {
         sendP2PData({ type: 'TOKEN_CLICKED', tokenId: tokenId });
     }
@@ -258,10 +332,6 @@ async function checkEatOrSafe(movedTokenId) {
     }
     return hasEaten;
 }
-
-/* ===================================================
-   ৫. রিভার্স ওয়াকিং ও বেসে ফেরত যাওয়ার অ্যানিমেশন (আসল)
-   =================================================== */
 async function resetTokenToBase(tokenId) {
     const token = tokens[tokenId];
     const playerPath = PATHS[token.color];
@@ -303,6 +373,7 @@ function switchTurn() {
     isMoving = false;
     consecutiveSixes = 0;
     updateDiceControls();
+    sendP2PData({ type: 'TURN_SWITCHED', nextPlayer: currentPlayer });
 }
 
 function updateDiceControls() {
@@ -335,7 +406,7 @@ function checkWinState() {
 }
 
 /* ===================================================
-   ৬. কাস্টম ট্র্যাকার ও বাউন্স ওভাররাইড (আসল)
+   ৬. স্মার্ট ডাইস অ্যালগরিদম
    =================================================== */
 const playerLuckPenalty = { red: 0, yellow: 0 };
 const playerSixCounts = { red: 0, yellow: 0 };
@@ -355,7 +426,6 @@ function updateDiceBouncing() {
         }
     }
 }
-
 const originalUpdateDiceControls = updateDiceControls;
 updateDiceControls = function() {
     originalUpdateDiceControls();
@@ -371,9 +441,6 @@ resetTokenToBase = async function(tokenId) {
     return await originalResetTokenToBase(tokenId);
 };
 
-/* ===================================================
-   ৭. স্মার্ট ডাইস অ্যালগরিদম (আসল)
-   =================================================== */
 function getWeightedRandom(targetValue, probability, penalty = 0) {
     let finalProbability = Math.max(0.01, probability - penalty);
     
@@ -478,13 +545,12 @@ function generateSmartDiceValue() {
 }
 
 /* ===================================================
-   ৮. ৩ডি ডাইস রোলিং হ্যান্ডলার (অনলাইন সিঙ্ক সহ)
+   ৭. ৩ডি ডাইস রোলিং হ্যান্ডলার
    =================================================== */
 function rollDice(diceId) {
     if (currentPlayer !== myRole) return;
     if (hasRolled || isMoving) return;
 
-    // নিজের স্ক্রিনে স্মার্ট ডাইস চাল
     const val = generateSmartDiceValue();
     processDiceRoll(diceId, val, false);
 }

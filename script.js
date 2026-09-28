@@ -1,10 +1,14 @@
+/**
+ * script.js - Client Side Game Engine & PeerJS Sync Logic
+ */
+
 // ১. লোকাল স্টোরেজ থেকে রুম ও রোল ডাটা রিসিভ
 const roomId = localStorage.getItem('ludo_room_id');
 const myRole = localStorage.getItem('ludo_player_role') || 'red'; // 'red' or 'yellow'
 const isHost = localStorage.getItem('ludo_is_host') === 'true';
 
-// ব্যাকএন্ড API ইউআরএল (আপনার Node.js সার্ভারের লিংক)
-const API_URL = "https://ludo-api.onrender.com"; // আপনার সার্ভার লাইভ হলে লিংক পরিবর্তন করুন
+// ডাইনামিক হোস্ট ইউআরএল (লোকাল অথবা লাইভ সার্ভার অটো-ডিটেক্ট)
+const API_URL = window.location.origin.includes('http') ? window.location.origin : "https://ludo-api.onrender.com";
 
 let peer = null;
 let conn = null;
@@ -20,7 +24,43 @@ function playSound(soundId) {
     }
 }
 
-// ৩. PeerJS সেটআপ ও অপনেন্ট সিঙ্ক্রোনাইজেশন
+// ৩. যার যার স্ক্রিনে তার গুটি নিচে দেখানোর জন্য বোর্ড রোটেট
+function applyBoardRotation() {
+    if (myRole === 'yellow') {
+        const board = document.querySelector('.grid-container');
+        if (board) {
+            board.classList.add('flip-board');
+        }
+    }
+}
+
+// ৪. ইউআই আপডেট: যার চাল তার ডাইস ও চালযোগ্য গুটি লাফানোর লজিক
+function updateTurnUI(moveableTokens = []) {
+    // আগের সব লাফানোর এনিমেশন ক্লাস মুছে ফেলা
+    document.querySelectorAll('.dice-container').forEach(d => d.classList.remove('turn-bounce'));
+    document.querySelectorAll('.token').forEach(t => t.classList.remove('token-bounce'));
+
+    // ১. ডাইস লাফানো: যদি নিজের চাল হয় এবং এখনো ডাইস চাল না দেওয়া হয়ে থাকে
+    if (currentTurn === myRole && !currentDiceValue) {
+        const myDiceId = (myRole === 'red') ? 'dice-bottom-left' : 'dice-top-right';
+        const diceElem = document.getElementById(myDiceId);
+        if (diceElem) {
+            diceElem.classList.add('turn-bounce');
+        }
+    }
+
+    // ২. গুটি লাফানো: ডাইস চালার পর যেগুলো গুটি সরানো সম্ভব
+    if (currentTurn === myRole && currentDiceValue && moveableTokens.length > 0) {
+        moveableTokens.forEach(tokenId => {
+            const tokenEl = document.getElementById(tokenId);
+            if (tokenEl) {
+                tokenEl.classList.add('token-bounce');
+            }
+        });
+    }
+}
+
+// ৫. PeerJS সেটআপ ও অপনেন্ট সিঙ্ক্রোনাইজেশন
 function initPeerConnection() {
     const peerId = isHost ? 'ludo-' + roomId : 'ludo-guest-' + Math.floor(Math.random() * 1000);
     peer = new Peer(peerId, {
@@ -34,39 +74,44 @@ function initPeerConnection() {
     });
 
     peer.on('open', () => {
-        if (!isHost) {
-            // গেস্ট হলে হোস্টের সাথে কানেক্ট করবে
+        if (!isHost && roomId) {
             conn = peer.connect('ludo-' + roomId);
             setupConnectionListeners();
         }
     });
 
     peer.on('connection', (incomingConn) => {
-        // হোস্ট হলে গেস্টের কানেকশন রিসিভ করবে
         conn = incomingConn;
         setupConnectionListeners();
     });
 }
 
-// ৪. অপনেন্টের চাল রিসিভ করার লিসেনার
+// ৬. অপনেন্টের ডাটা রিসিভ করার লিসেনার
 function setupConnectionListeners() {
     conn.on('data', (data) => {
         if (data.type === 'DICE_ROLLED') {
             animateDiceRoll(data.diceContainerId, data.value);
             currentDiceValue = data.value;
+            updateTurnUI(data.moveableTokens || []);
         } else if (data.type === 'TOKEN_MOVED') {
             moveTokenUI(data.tokenId, data.targetCellId);
             currentTurn = data.nextTurn;
+            currentDiceValue = null;
+            updateTurnUI();
+        } else if (data.type === 'SKIP_TURN') {
+            currentTurn = data.nextTurn;
+            currentDiceValue = null;
+            updateTurnUI();
         }
     });
 }
 
-// ৫. ডাইস ক্লিক হ্যান্ডলার (সিকিউর API রোল)
+// ৭. ডাইস ক্লিক হ্যান্ডলার
 async function handleDiceClick(diceContainerId) {
-    // নিজের চাল না হলে ডাইস ক্লিক কাজ করবে না
+    // সিকিউরিটি চেক: নিজের ডাইস না হলে বা চাল না থাকলে ব্লক করা
     if ((myRole === 'red' && diceContainerId !== 'dice-bottom-left') ||
         (myRole === 'yellow' && diceContainerId !== 'dice-top-right')) {
-        alert("এখন আপনার চাল নয়!");
+        alert("এটি আপনার ডাইস নয়!");
         return;
     }
 
@@ -75,49 +120,85 @@ async function handleDiceClick(diceContainerId) {
         return;
     }
 
+    if (currentDiceValue !== null) {
+        alert("আপনি অলরেডি ডাইস চাল দিয়েছেন! এবার গুটি চাল দিন।");
+        return;
+    }
+
     playSound('sound-dice');
 
+    // ডাইসে ক্লিক হওয়ামাত্র লাফানো বন্ধ করা
+    document.getElementById(diceContainerId).classList.remove('turn-bounce');
+
+    let diceValue = null;
+    let moveableTokens = [];
+
     try {
-        // সিকিউর ব্যাকএন্ড Node.js API থেকে ডাইসের মান চাওয়া
         const response = await fetch(`${API_URL}/api/roll-dice`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roomId: roomId, player: myRole })
+            body: JSON.stringify({ roomId: roomId || 'default_room', player: myRole })
         });
-        
+
         const data = await response.json();
-        const diceValue = data.diceValue; // ব্যাকএন্ড থেকে জেনারেট হওয়া মান
-        currentDiceValue = diceValue;
-
-        // অ্যানিমেশন দেখান
-        animateDiceRoll(diceContainerId, diceValue);
-
-        // অপনেন্টকে PeerJS দিয়ে শুধু জানিয়ে দেওয়া যে ডাইস কত পড়েছে
-        if (conn && conn.open) {
-            conn.send({
-                type: 'DICE_ROLLED',
-                diceContainerId: diceContainerId,
-                value: diceValue
-            });
+        if (response.ok && data.success) {
+            diceValue = data.diceValue;
+            moveableTokens = data.moveableTokens || [];
+        } else {
+            throw new Error(data.error || "Server Response Error");
         }
     } catch (err) {
-        // যদি ব্যাকএন্ড অফলাইন থাকে, তবে লোকাল ফলব্যাক জেনারেটর
-        const fallbackValue = Math.floor(Math.random() * 6) + 1;
-        currentDiceValue = fallbackValue;
-        animateDiceRoll(diceContainerId, fallbackValue);
-        
-        if (conn && conn.open) {
-            conn.send({ type: 'DICE_ROLLED', diceContainerId: diceContainerId, value: fallbackValue });
+        // ফলব্যাক: সার্ভার না থাকলে র্যান্ডম রোল
+        diceValue = Math.floor(Math.random() * 6) + 1;
+        // লোকাল চালযোগ্য গুটি স্ক্যান
+        moveableTokens = getLocalMoveableTokens(myRole, diceValue);
+    }
+
+    currentDiceValue = diceValue;
+
+    // ৩ডি রোটেশন এনিমেশন চালানো
+    animateDiceRoll(diceContainerId, diceValue);
+
+    // চাল দেওয়ার মতো গুটি আছে কিনা চেক
+    setTimeout(() => {
+        if (moveableTokens.length > 0) {
+            updateTurnUI(moveableTokens);
+        } else {
+            // চাল দেওয়ার মতো কোনো গুটি না থাকলে ২ সেকেন্ড পর চাল স্কিপ করে অপোনেন্টকে দেওয়া
+            const nextTurn = (diceValue === 6) ? myRole : (myRole === 'red' ? 'yellow' : 'red');
+            if (nextTurn !== myRole) {
+                setTimeout(() => {
+                    currentTurn = nextTurn;
+                    currentDiceValue = null;
+                    updateTurnUI();
+
+                    if (conn && conn.open) {
+                        conn.send({ type: 'SKIP_TURN', nextTurn: nextTurn });
+                    }
+                }, 1000);
+            } else {
+                currentDiceValue = null;
+                updateTurnUI();
+            }
         }
+    }, 1000);
+
+    // অপনেন্টকে PeerJS দিয়ে ডাটা পাঠানো
+    if (conn && conn.open) {
+        conn.send({
+            type: 'DICE_ROLLED',
+            diceContainerId: diceContainerId,
+            value: diceValue,
+            moveableTokens: moveableTokens
+        });
     }
 }
 
-// ৬. ডাইস ৩ডি অ্যানিমেশন
+// ৮. ডাইস ৩ডি অ্যানিমেশন
 function animateDiceRoll(containerId, value) {
     const cube = document.querySelector(`#${containerId} .cube`);
     if (!cube) return;
 
-    // ৩ডি রোটেশন ডিগ্রী নির্ধারণ
     const rotations = {
         1: 'rotateX(0deg) rotateY(0deg)',
         6: 'rotateX(180deg) rotateY(0deg)',
@@ -128,14 +209,14 @@ function animateDiceRoll(containerId, value) {
     };
 
     cube.style.transition = 'transform 1s ease-out';
-    cube.style.transform = `rotateX(${720 + Math.random()*360}deg) rotateY(${720 + Math.random()*360}deg)`;
+    cube.style.transform = `rotateX(${720 + Math.random() * 360}deg) rotateY(${720 + Math.random() * 360}deg)`;
 
     setTimeout(() => {
         cube.style.transform = rotations[value];
     }, 1000);
 }
 
-// ৭. গুটি ক্লিক হ্যান্ডলার (সিকিউর মুভমেন্ট লজিক)
+// ৯. গুটি ক্লিক হ্যান্ডলার
 async function handleTokenClick(tokenId) {
     if (currentTurn !== myRole) return;
     if (!currentDiceValue) {
@@ -143,14 +224,24 @@ async function handleTokenClick(tokenId) {
         return;
     }
 
+    // নিশ্চিত হওয়া যে ক্লিক করা গুটিটি নিজের প্লেয়ারের
+    if (!tokenId.startsWith(myRole)) {
+        alert("এটি আপনার গুটি নয়!");
+        return;
+    }
+
     playSound('sound-move');
 
+    let validMove = false;
+    let targetCellId = null;
+    let nextTurn = currentTurn;
+
     try {
-        // ব্যাকএন্ড API থেকে জেনে নেওয়া এই গুটি কোন সেলে যাবে
         const response = await fetch(`${API_URL}/api/move-token`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                roomId: roomId || 'default_room',
                 tokenId: tokenId,
                 diceValue: currentDiceValue,
                 player: myRole
@@ -158,32 +249,42 @@ async function handleTokenClick(tokenId) {
         });
 
         const data = await response.json();
-
-        if (data.validMove) {
-            moveTokenUI(tokenId, data.targetCellId);
-
-            const nextTurn = (currentDiceValue === 6) ? myRole : (myRole === 'red' ? 'yellow' : 'red');
-            currentTurn = nextTurn;
-            currentDiceValue = null;
-
-            // অপনেন্টকে নতুন গুটির পজিশন পাঠানো
-            if (conn && conn.open) {
-                conn.send({
-                    type: 'TOKEN_MOVED',
-                    tokenId: tokenId,
-                    targetCellId: data.targetCellId,
-                    nextTurn: nextTurn
-                });
-            }
+        if (response.ok && data.validMove) {
+            validMove = true;
+            targetCellId = data.targetCellId;
+            nextTurn = data.nextTurn;
         } else {
-            alert("এই গুটিটি চাল দেওয়া সম্ভব নয়!");
+            alert(data.message || "এই গুটিটি চাল দেওয়া সম্ভব নয়!");
+            return;
         }
     } catch (err) {
-        console.error("Move validation error:", err);
+        // লোকাল ক্লায়েন্ট সাইড গণনা (সার্ভার অফলাইন থাকলে)
+        const tokenElem = document.getElementById(tokenId);
+        if (tokenElem) {
+            validMove = true;
+            nextTurn = (currentDiceValue === 6) ? myRole : (myRole === 'red' ? 'yellow' : 'red');
+        }
+    }
+
+    if (validMove && targetCellId) {
+        moveTokenUI(tokenId, targetCellId);
+
+        currentTurn = nextTurn;
+        currentDiceValue = null;
+        updateTurnUI();
+
+        if (conn && conn.open) {
+            conn.send({
+                type: 'TOKEN_MOVED',
+                tokenId: tokenId,
+                targetCellId: targetCellId,
+                nextTurn: nextTurn
+            });
+        }
     }
 }
 
-// ৮. বোর্ডের ভিজ্যুয়াল গুটি সরানোর অ্যানিমেশন
+// ১০. বোর্ডের ভিজ্যুয়াল গুটি সরানোর অ্যানিমেশন
 function moveTokenUI(tokenId, targetCellId) {
     const token = document.getElementById(tokenId);
     const targetCell = document.getElementById(targetCellId);
@@ -193,8 +294,15 @@ function moveTokenUI(tokenId, targetCellId) {
     }
 }
 
+// ১১. ফলব্যাক হেল্পার (সার্ভার ছাড়া লোকাল পরীক্ষার জন্য)
+function getLocalMoveableTokens(player, diceValue) {
+    const tokens = Array.from(document.querySelectorAll(`.${player}-token`));
+    return tokens.map(t => t.id);
+}
+
 // ইনিশিয়ালাইজেশন
 window.onload = () => {
+    applyBoardRotation();
     initPeerConnection();
+    updateTurnUI();
 };
-            

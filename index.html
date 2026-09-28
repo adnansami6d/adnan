@@ -3,14 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Online Ludo Game</title>
+    <title>লুডো মাল্টিপ্লেয়ার গেম</title>
+    <!-- CSS stylesheet link -->
     <link rel="stylesheet" href="style.css">
+    <!-- PeerJS CDN for P2P connection -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+    <!-- Socket.io CDN for secure Node.js backend validation -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 </head>
 <body>
 
     <div class="grid-container">
-        <!-- Top Right Dice (Yellow Player) -->
-        <div id="dice-top-right" class="dice-container" onclick="rollDice('dice-top-right')">
+        <!-- TOP RIGHT DICE (YELLOW PLAYER) -->
+        <div id="dice-top-right" class="dice-container" onclick="handleDiceClick('dice-top-right')">
             <div class="cube">
                 <!-- 1 (Front) -->
                 <div class="face front">
@@ -18,7 +23,6 @@
                         <circle cx="50" cy="50" r="12" fill="#333"/>
                     </svg>
                 </div>
-
                 <!-- 6 (Back) -->
                 <div class="face back">
                     <svg viewBox="0 0 100 100" class="dice-svg">
@@ -30,7 +34,6 @@
                         <circle cx="72" cy="75" r="10" fill="#333"/>
                     </svg>
                 </div>
-
                 <!-- 3 (Right) -->
                 <div class="face right">
                     <svg viewBox="0 0 100 100" class="dice-svg">
@@ -39,7 +42,6 @@
                         <circle cx="75" cy="75" r="10" fill="#333"/>
                     </svg>
                 </div>
-
                 <!-- 4 (Left) -->
                 <div class="face left">
                     <svg viewBox="0 0 100 100" class="dice-svg">
@@ -49,7 +51,6 @@
                         <circle cx="72" cy="72" r="10" fill="#333"/>
                     </svg>
                 </div>
-
                 <!-- 2 (Top) -->
                 <div class="face top">
                     <svg viewBox="0 0 100 100" class="dice-svg">
@@ -57,7 +58,6 @@
                         <circle cx="72" cy="72" r="10" fill="#333"/>
                     </svg>
                 </div>
-
                 <!-- 5 (Bottom) -->
                 <div class="face bottom">
                     <svg viewBox="0 0 100 100" class="dice-svg">
@@ -71,8 +71,8 @@
             </div>
         </div>
 
-        <!-- Bottom Left Dice (Red Player) -->
-        <div id="dice-bottom-left" class="dice-container" onclick="rollDice('dice-bottom-left')">
+        <!-- BOTTOM LEFT DICE (RED PLAYER) -->
+        <div id="dice-bottom-left" class="dice-container" onclick="handleDiceClick('dice-bottom-left')">
             <div class="cube">
                 <!-- 1 (Front) -->
                 <div class="face front">
@@ -80,7 +80,6 @@
                         <circle cx="50" cy="50" r="12" fill="#333"/>
                     </svg>
                 </div>
-
                 <!-- 6 (Back) -->
                 <div class="face back">
                     <svg viewBox="0 0 100 100" class="dice-svg">
@@ -92,7 +91,6 @@
                         <circle cx="72" cy="75" r="10" fill="#333"/>
                     </svg>
                 </div>
-
                 <!-- 3 (Right) -->
                 <div class="face right">
                     <svg viewBox="0 0 100 100" class="dice-svg">
@@ -101,7 +99,6 @@
                         <circle cx="75" cy="75" r="10" fill="#333"/>
                     </svg>
                 </div>
-
                 <!-- 4 (Left) -->
                 <div class="face left">
                     <svg viewBox="0 0 100 100" class="dice-svg">
@@ -111,7 +108,6 @@
                         <circle cx="72" cy="72" r="10" fill="#333"/>
                     </svg>
                 </div>
-
                 <!-- 2 (Top) -->
                 <div class="face top">
                     <svg viewBox="0 0 100 100" class="dice-svg">
@@ -119,7 +115,6 @@
                         <circle cx="72" cy="72" r="10" fill="#333"/>
                     </svg>
                 </div>
-
                 <!-- 5 (Bottom) -->
                 <div class="face bottom">
                     <svg viewBox="0 0 100 100" class="dice-svg">
@@ -160,10 +155,10 @@
 
         <div id="top-right-home" class="home-box">
             <div class="home-inner-box">
-                <div id="yellow-1" class="token yellow-token"></div>
-                <div id="yellow-2" class="token yellow-token"></div>
-                <div id="yellow-3" class="token yellow-token"></div>
-                <div id="yellow-4" class="token yellow-token"></div>
+                <div id="yellow-1" class="token yellow-token" onclick="handleTokenClick('yellow-1')"></div>
+                <div id="yellow-2" class="token yellow-token" onclick="handleTokenClick('yellow-2')"></div>
+                <div id="yellow-3" class="token yellow-token" onclick="handleTokenClick('yellow-3')"></div>
+                <div id="yellow-4" class="token yellow-token" onclick="handleTokenClick('yellow-4')"></div>
             </div>
         </div>
 
@@ -191,10 +186,10 @@
         <div id="cell-151" class="cell"></div>
         <div id="top-left-home" class="home-box">
             <div class="home-inner-box">
-                <div id="blue-1" class="token blue-token"></div>
-                <div id="blue-2" class="token blue-token"></div>
-                <div id="blue-3" class="token blue-token"></div>
-                <div id="blue-4" class="token blue-token"></div>
+                <div id="blue-1" class="token blue-token" onclick="handleTokenClick('blue-1')"></div>
+                <div id="blue-2" class="token blue-token" onclick="handleTokenClick('blue-2')"></div>
+                <div id="blue-3" class="token blue-token" onclick="handleTokenClick('blue-3')"></div>
+                <div id="blue-4" class="token blue-token" onclick="handleTokenClick('blue-4')"></div>
             </div>
         </div>
         <div id="cell-156" class="cell"></div>
@@ -295,10 +290,10 @@
         <div id="cell-70" class="cell"></div>
         <div id="bottom-right-home" class="home-box">
             <div class="home-inner-box">
-                <div id="green-1" class="token green-token"></div>
-                <div id="green-2" class="token green-token"></div>
-                <div id="green-3" class="token green-token"></div>
-                <div id="green-4" class="token green-token"></div>
+                <div id="green-1" class="token green-token" onclick="handleTokenClick('green-1')"></div>
+                <div id="green-2" class="token green-token" onclick="handleTokenClick('green-2')"></div>
+                <div id="green-3" class="token green-token" onclick="handleTokenClick('green-3')"></div>
+                <div id="green-4" class="token green-token" onclick="handleTokenClick('green-4')"></div>
             </div>
         </div>
         <div id="cell-75" class="cell"></div>
@@ -324,10 +319,10 @@
 
         <div id="bottom-left-home" class="home-box">
             <div class="home-inner-box">
-                <div id="red-1" class="token red-token"></div>
-                <div id="red-2" class="token red-token"></div>
-                <div id="red-3" class="token red-token"></div>
-                <div id="red-4" class="token red-token"></div>
+                <div id="red-1" class="token red-token" onclick="handleTokenClick('red-1')"></div>
+                <div id="red-2" class="token red-token" onclick="handleTokenClick('red-2')"></div>
+                <div id="red-3" class="token red-token" onclick="handleTokenClick('red-3')"></div>
+                <div id="red-4" class="token red-token" onclick="handleTokenClick('red-4')"></div>
             </div>
         </div>
 
@@ -336,9 +331,7 @@
         <div id="cell-23" class="cell"></div>
         <div id="cell-24" class="cell"></div>
         <div id="cell-25" class="cell"></div>
-        <div id="cell-30" class="cell"></div>
-
-        <!-- Row 1 -->
+        <div id="cell-30" class="cell"></div>       
         <div id="cell-1" class="cell"></div>
         <div id="cell-2" class="cell"></div>
         <div id="cell-3" class="cell"></div>
@@ -356,7 +349,14 @@
         <div id="cell-15" class="cell"></div>
     </div>
 
-    <!-- গেমের মূল জাভাস্ক্রিপ্ট সোর্স ফাইল -->
+    <!-- AUDIO ELEMENTS -->
+    <audio id="sound-dice" src="sound/dice.mp3" preload="auto"></audio>
+    <audio id="sound-move" src="sound/move.mp3" preload="auto"></audio>
+    <audio id="sound-eat" src="sound/eat.mp3" preload="auto"></audio>
+    <audio id="sound-win" src="sound/win.mp3" preload="auto"></audio>
+
+    <!-- CLIENT JAVASCRIPT -->
     <script src="script.js"></script>
 </body>
 </html>
+ 

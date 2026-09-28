@@ -1,0 +1,557 @@
+/* ===================================================
+   ১. সাউন্ড ও গ্লোবাল ভ্যারিয়েবল (আপনার মূল কোড অক্ষত)
+   =================================================== */
+const soundDiceRoll = new Audio('dice-roll.mp3');
+const soundSix = new Audio('six.mp3');
+const soundMove = new Audio('move.mp3');
+const eatSounds = [
+    new Audio('eat1.mp3'),
+    new Audio('eat2.mp3'),
+    new Audio('eat3.mp3')
+];
+
+const soundHome = new Audio('home.mp3');
+const soundWin = new Audio('win.mp3');
+
+function playAudio(audio, maxDurationMs = null) {
+    if (audio) {
+        audio.currentTime = 0;
+        audio.play().catch(e => console.log("Audio play error:", e));
+
+        if (maxDurationMs) {
+            setTimeout(() => {
+                audio.pause();
+                audio.currentTime = 0;
+            }, maxDurationMs);
+        }
+    }
+}
+
+const SAFE_CELLS = [22, 93, 122, 187, 204, 133, 104, 39];
+
+const PATHS = {
+    red: [
+        22, 37, 52, 67, 82, 96, 95, 94, 93, 92, 91, 106, 121, 122, 123, 124, 125, 126, 
+        142, 157, 172, 187, 202, 217, 218, 219, 204, 189, 174, 159, 144, 130, 131, 132, 
+        133, 134, 135, 120, 105, 104, 103, 102, 101, 100, 84, 69, 54, 39, 24, 9, 8, 23, 
+        38, 53, 68, 83, 'home-bottom'
+    ],
+    yellow: [
+        204, 189, 174, 159, 144, 130, 131, 132, 133, 134, 135, 120, 105, 104, 103, 102, 
+        101, 100, 84, 69, 54, 39, 24, 9, 8, 7, 22, 37, 52, 67, 82, 96, 95, 94, 93, 92, 91, 
+        106, 121, 122, 123, 124, 125, 126, 142, 157, 172, 187, 202, 217, 218, 203, 188, 173, 158, 143, 'home-top'
+    ]
+};
+
+let currentPlayer = 'red';
+let diceValue = 0;
+let hasRolled = false;
+let isMoving = false; 
+let consecutiveSixes = 0;
+
+const tokens = {
+    'red-1': { color: 'red', pathIndex: -1, isFinished: false, initialParent: null },
+    'red-2': { color: 'red', pathIndex: -1, isFinished: false, initialParent: null },
+    'red-3': { color: 'red', pathIndex: -1, isFinished: false, initialParent: null },
+    'red-4': { color: 'red', pathIndex: -1, isFinished: false, initialParent: null },
+    'yellow-1': { color: 'yellow', pathIndex: -1, isFinished: false, initialParent: null },
+    'yellow-2': { color: 'yellow', pathIndex: -1, isFinished: false, initialParent: null },
+    'yellow-3': { color: 'yellow', pathIndex: -1, isFinished: false, initialParent: null },
+    'yellow-4': { color: 'yellow', pathIndex: -1, isFinished: false, initialParent: null }
+};
+
+/* ===================================================
+   ২. অনলাইন PeerJS নেটওয়ার্ক সিস্টেম (নতুন যুক্ত করা হয়েছে)
+   =================================================== */
+const roomId = localStorage.getItem('ludo_room_id') || 'room-101';
+const myRole = localStorage.getItem('ludo_player_role') || 'red'; 
+const isHost = localStorage.getItem('ludo_is_host') === 'true';
+
+let peer = null;
+let conn = null;
+
+function initP2P() {
+    const peerId = isHost ? 'ludo-' + roomId : 'ludo-guest-' + Math.floor(Math.random() * 1000);
+    peer = new Peer(peerId, { secure: true });
+
+    peer.on('open', () => {
+        if (!isHost && roomId) {
+            conn = peer.connect('ludo-' + roomId);
+            setupConnectionListeners();
+        }
+    });
+
+    peer.on('connection', (incoming) => {
+        conn = incoming;
+        setupConnectionListeners();
+    });
+}
+
+function setupConnectionListeners() {
+    if (!conn) return;
+    conn.on('data', (data) => {
+        if (data.type === 'DICE_ROLLED') {
+            processDiceRoll(data.diceId, data.value, true);
+        } else if (data.type === 'TOKEN_CLICKED') {
+            handleTokenClick(data.tokenId, true);
+        }
+    });
+}
+
+function sendP2PData(data) {
+    if (conn && conn.open) {
+        conn.send(data);
+    }
+}
+
+/* ===================================================
+   ৩. গেমের পেজ লোড ও ইভেন্ট সেটিংস
+   =================================================== */
+window.addEventListener('DOMContentLoaded', () => {
+    Object.keys(tokens).forEach(tokenId => {
+        const tokenElem = document.getElementById(tokenId);
+        if (tokenElem) {
+            tokens[tokenId].initialParent = tokenElem.parentElement;
+        }
+    });
+    setupTokenEvents();
+    updateDiceControls();
+    initP2P();
+});
+
+function setupTokenEvents() {
+    Object.keys(tokens).forEach(tokenId => {
+        const tokenElem = document.getElementById(tokenId);
+        if (tokenElem) {
+            tokenElem.addEventListener('click', () => handleTokenClick(tokenId, false));
+        }
+    });
+}
+
+function getMoveableTokens() {
+    const playerTokens = Object.keys(tokens).filter(id => tokens[id].color === currentPlayer && !tokens[id].isFinished);
+    
+    return playerTokens.filter(id => {
+        const token = tokens[id];
+        if (token.pathIndex === -1) {
+            return diceValue === 6;
+        }
+        const newIndex = token.pathIndex + diceValue;
+        return newIndex < PATHS[currentPlayer].length;
+    });
+}
+
+function setTokensBounce(tokenIds, shouldActive) {
+    Object.keys(tokens).forEach(id => {
+        const elem = document.getElementById(id);
+        if (elem) {
+            elem.classList.remove('active-turn');
+            elem.style.animation = "";
+        }
+    });
+
+    if (shouldActive) {
+        tokenIds.forEach(id => {
+            const elem = document.getElementById(id);
+            if (elem) {
+                elem.classList.add('active-turn');
+                elem.style.animation = "bounce 0.5s infinite alternate";
+            }
+        });
+    }
+}
+
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+/* ===================================================
+   ৪. ৩ডি গুটি হাঁটার মূল অ্যানিমেশন (আপনার আসল কোড অক্ষত)
+   =================================================== */
+async function handleTokenClick(tokenId, isRemote = false) {
+    // অনলাইনে নিজের টার্ন ছাড়া ক্লিক গ্রহণ করা হবে না
+    if (!isRemote && currentPlayer !== myRole) return;
+    if (!hasRolled || isMoving) return;
+
+    const token = tokens[tokenId];
+    if (token.color !== currentPlayer || token.isFinished) return;
+
+    const moveableTokens = getMoveableTokens();
+    if (!moveableTokens.includes(tokenId)) return;
+
+    // লোকাল ক্লিক হলে ডাটা অপর প্লেয়ারের ব্রাউজারে পাঠানো
+    if (!isRemote) {
+        sendP2PData({ type: 'TOKEN_CLICKED', tokenId: tokenId });
+    }
+
+    isMoving = true;
+    setTokensBounce(Object.keys(tokens), false);
+
+    let stepsToMove = diceValue;
+
+    if (token.pathIndex === -1 && diceValue === 6) {
+        token.pathIndex = 0;
+        moveTokenToCell(tokenId, PATHS[currentPlayer][0]);
+        playAudio(soundMove);
+        await delay(250); 
+    } else if (token.pathIndex >= 0) {
+        for (let i = 0; i < stepsToMove; i++) {
+            token.pathIndex++;
+            const currentCell = PATHS[currentPlayer][token.pathIndex];
+            
+            moveTokenToCell(tokenId, currentCell);
+            playAudio(soundMove);
+            await delay(250); 
+        }
+    }
+
+    if (token.pathIndex === PATHS[currentPlayer].length - 1) {
+        token.isFinished = true;
+        
+        const homeCellId = PATHS[currentPlayer][token.pathIndex];
+        moveTokenToCell(tokenId, homeCellId);
+
+        playAudio(soundHome);
+
+        checkWinState();
+        isMoving = false;
+        handlePostMove(true);
+        return;
+    }
+    
+    const extraTurn = await checkEatOrSafe(tokenId);
+    
+    isMoving = false;
+    handlePostMove(diceValue === 6 || extraTurn);
+}
+
+function moveTokenToCell(tokenId, cellIdentifier) {
+    const tokenElem = document.getElementById(tokenId);
+    let targetElem;
+
+    if (typeof cellIdentifier === 'number') {
+        targetElem = document.getElementById(`cell-${cellIdentifier}`);
+    } else {
+        targetElem = document.getElementById(cellIdentifier);
+    }
+
+    if (targetElem && tokenElem) {
+        targetElem.appendChild(tokenElem);
+    }
+}
+
+async function checkEatOrSafe(movedTokenId) {
+    const currentToken = tokens[movedTokenId];
+    const currentCellId = PATHS[currentPlayer][currentToken.pathIndex];
+
+    if (SAFE_CELLS.includes(currentCellId) || typeof currentCellId === 'string') {
+        return false;
+    }
+    let hasEaten = false;
+    for (const otherTokenId of Object.keys(tokens)) {
+        const otherToken = tokens[otherTokenId];
+        if (otherToken.color !== currentPlayer && otherToken.pathIndex >= 0 && !otherToken.isFinished) {
+            const otherCellId = PATHS[otherToken.color][otherToken.pathIndex];
+            if (currentCellId === otherCellId) {
+                hasEaten = true;
+                await resetTokenToBase(otherTokenId);
+            }
+        }
+    }
+    return hasEaten;
+}
+
+/* ===================================================
+   ৫. রিভার্স ওয়াকিং ও বেসে ফেরত যাওয়ার অ্যানিমেশন (আসল)
+   =================================================== */
+async function resetTokenToBase(tokenId) {
+    const token = tokens[tokenId];
+    const playerPath = PATHS[token.color];
+    const currentPos = token.pathIndex;
+    if (currentPos < 0) return;
+
+    const randomEatSound = eatSounds[Math.floor(Math.random() * eatSounds.length)];
+    randomEatSound.currentTime = 0;
+    randomEatSound.loop = true;
+    randomEatSound.play().catch(e => console.log(e));
+
+    const stepDelay = Math.max(10, Math.min(100, Math.floor(1200 / (currentPos + 1))));
+    for (let i = currentPos - 1; i >= 0; i--) {
+        token.pathIndex = i;
+        const previousCell = playerPath[i];
+        moveTokenToCell(tokenId, previousCell);
+        await delay(stepDelay);
+    }
+    token.pathIndex = -1;
+    const tokenElem = document.getElementById(tokenId);
+    if (tokenElem && token.initialParent) {
+        token.initialParent.appendChild(tokenElem);
+    }
+    randomEatSound.pause();
+    randomEatSound.currentTime = 0;
+    randomEatSound.loop = false;
+}
+
+function handlePostMove(getsAnotherTurn) {
+    hasRolled = false;
+    if (!getsAnotherTurn) {
+        switchTurn();
+    }
+}
+
+function switchTurn() {
+    currentPlayer = currentPlayer === 'red' ? 'yellow' : 'red';
+    hasRolled = false;
+    isMoving = false;
+    consecutiveSixes = 0;
+    updateDiceControls();
+}
+
+function updateDiceControls() {
+    const redDice = document.getElementById('dice-bottom-left');
+    const yellowDice = document.getElementById('dice-top-right');
+
+    if (currentPlayer === 'red') {
+        redDice.style.opacity = '1';
+        redDice.style.pointerEvents = 'auto';
+        yellowDice.style.opacity = '0.4';
+        yellowDice.style.pointerEvents = 'none';
+    } else {
+        yellowDice.style.opacity = '1';
+        yellowDice.style.pointerEvents = 'auto';
+        redDice.style.opacity = '0.4';
+        redDice.style.pointerEvents = 'none';
+    }
+}
+
+function checkWinState() {
+    const playerTokens = Object.keys(tokens).filter(id => tokens[id].color === currentPlayer);
+    const hasWon = playerTokens.every(id => tokens[id].isFinished);
+
+    if (hasWon) {
+        playAudio(soundWin);
+        setTimeout(() => {
+            alert(`🎉 অভিনন্দন! ${currentPlayer === 'red' ? 'লাল (Red)' : 'হলুদ (Yellow)'} প্লেয়ার জয়ী হয়েছেন!`);
+        }, 500);
+    }
+}
+
+/* ===================================================
+   ৬. কাস্টম ট্র্যাকার ও বাউন্স ওভাররাইড (আসল)
+   =================================================== */
+const playerLuckPenalty = { red: 0, yellow: 0 };
+const playerSixCounts = { red: 0, yellow: 0 };
+
+function updateDiceBouncing() {
+    const redDice = document.getElementById('dice-bottom-left');
+    const yellowDice = document.getElementById('dice-top-right');
+
+    if (redDice) redDice.style.animation = "";
+    if (yellowDice) yellowDice.style.animation = "";
+
+    if (!hasRolled && !isMoving) {
+        if (currentPlayer === 'red' && redDice) {
+            redDice.style.animation = "bounce 0.6s infinite alternate";
+        } else if (currentPlayer === 'yellow' && yellowDice) {
+            yellowDice.style.animation = "bounce 0.6s infinite alternate";
+        }
+    }
+}
+
+const originalUpdateDiceControls = updateDiceControls;
+updateDiceControls = function() {
+    originalUpdateDiceControls();
+    updateDiceBouncing();
+};
+
+const originalResetTokenToBase = resetTokenToBase;
+resetTokenToBase = async function(tokenId) {
+    const eatenToken = tokens[tokenId];
+    if (eatenToken && playerLuckPenalty.hasOwnProperty(eatenToken.color)) {
+        playerLuckPenalty[eatenToken.color] += 0.02;
+    }
+    return await originalResetTokenToBase(tokenId);
+};
+
+/* ===================================================
+   ৭. স্মার্ট ডাইস অ্যালগরিদম (আসল)
+   =================================================== */
+function getWeightedRandom(targetValue, probability, penalty = 0) {
+    let finalProbability = Math.max(0.01, probability - penalty);
+    
+    if (Math.random() < finalProbability) {
+        if (Array.isArray(targetValue)) {
+            return targetValue[Math.floor(Math.random() * targetValue.length)];
+        }
+        return targetValue;
+    } else {
+        const targets = Array.isArray(targetValue) ? targetValue : [targetValue];
+        const remainingValues = [1, 2, 3, 4, 5, 6].filter(val => !targets.includes(val));
+        return remainingValues[Math.floor(Math.random() * remainingValues.length)];
+    }
+}
+
+function generateSmartDiceValue() {
+    const opponent = currentPlayer === 'red' ? 'yellow' : 'red';
+    const playerPenalty = playerLuckPenalty[currentPlayer] || 0;
+
+    if (consecutiveSixes >= 2) {
+        return Math.floor(Math.random() * 5) + 1;
+    }
+
+    const myTokens = Object.keys(tokens).filter(id => tokens[id].color === currentPlayer && !tokens[id].isFinished);
+    const opponentTokens = Object.keys(tokens).filter(id => tokens[id].color === opponent && !tokens[id].isFinished);
+
+    let canEatOpponent = false;
+    let eatDistance = 0;
+
+    for (const myId of myTokens) {
+        const myToken = tokens[myId];
+        if (myToken.pathIndex === -1) continue;
+
+        const myCell = PATHS[currentPlayer][myToken.pathIndex];
+        if (typeof myCell !== 'number') continue;
+
+        for (const oppId of opponentTokens) {
+            const oppToken = tokens[oppId];
+            if (oppToken.pathIndex === -1) continue;
+
+            const oppCell = PATHS[opponent][oppToken.pathIndex];
+            if (SAFE_CELLS.includes(oppCell) || typeof oppCell !== 'number') continue;
+
+            for (let dist = 1; dist <= 6; dist++) {
+                const targetIndex = myToken.pathIndex + dist;
+                if (targetIndex < PATHS[currentPlayer].length) {
+                    if (PATHS[currentPlayer][targetIndex] === oppCell) {
+                        canEatOpponent = true;
+                        eatDistance = dist;
+                        break;
+                    }
+                }
+            }
+            if (canEatOpponent) break;
+        }
+        if (canEatOpponent) break;
+    }
+
+    if (canEatOpponent) {
+        return getWeightedRandom(eatDistance, 0.40, playerPenalty);
+    }
+
+    const allInBase = myTokens.every(id => tokens[id].pathIndex === -1);
+    if (allInBase) {
+        return getWeightedRandom(6, 0.60, playerPenalty);
+    }
+
+    for (const id of myTokens) {
+        const token = tokens[id];
+        if (token.pathIndex >= 0) {
+            const distanceToHome = (PATHS[currentPlayer].length - 1) - token.pathIndex;
+            if (distanceToHome === 1 || distanceToHome === 2) {
+                return getWeightedRandom(distanceToHome, 0.50, playerPenalty);
+            }
+        }
+    }
+
+    const myActiveTokens = Object.keys(tokens).filter(id => tokens[id].color === currentPlayer && tokens[id].pathIndex > -1).length;
+    const oppActiveTokens = Object.keys(tokens).filter(id => tokens[id].color === opponent && tokens[id].pathIndex > -1).length;
+
+    if (myActiveTokens > oppActiveTokens) {
+        if (Math.random() < Math.max(0.01, 0.08 - playerPenalty)) {
+            const goodValues = [4, 5, 6];
+            return goodValues[Math.floor(Math.random() * goodValues.length)];
+        }
+    }
+
+    const mySixes = playerSixCounts[currentPlayer] || 0;
+    const oppSixes = playerSixCounts[opponent] || 0;
+
+    let sixProbability = 0.05;
+
+    if (oppSixes - mySixes >= 2) {
+        sixProbability = 0.90;
+    }
+
+    if (Math.random() < Math.max(0.01, sixProbability - playerPenalty)) {
+        return 6;
+    }
+
+    return Math.floor(Math.random() * 6) + 1;
+}
+
+/* ===================================================
+   ৮. ৩ডি ডাইস রোলিং হ্যান্ডলার (অনলাইন সিঙ্ক সহ)
+   =================================================== */
+function rollDice(diceId) {
+    if (currentPlayer !== myRole) return;
+    if (hasRolled || isMoving) return;
+
+    // নিজের স্ক্রিনে স্মার্ট ডাইস চাল
+    const val = generateSmartDiceValue();
+    processDiceRoll(diceId, val, false);
+}
+
+function processDiceRoll(diceId, forcedValue, isRemote = false) {
+    const diceElement = document.getElementById(diceId);
+    const cube = diceElement ? diceElement.querySelector('.cube') : null;
+
+    if (diceElement) diceElement.style.animation = "";
+
+    playAudio(soundDiceRoll);
+
+    diceValue = forcedValue;
+    hasRolled = true;
+
+    if (!isRemote) {
+        sendP2PData({ type: 'DICE_ROLLED', diceId: diceId, value: forcedValue });
+    }
+
+    if (diceValue === 6) {
+        consecutiveSixes++;
+        playerSixCounts[currentPlayer] = (playerSixCounts[currentPlayer] || 0) + 1;
+    } else {
+        consecutiveSixes = 0;
+    }
+
+    const xRotations = (Math.floor(Math.random() * 4) + 4) * 360;
+    const yRotations = (Math.floor(Math.random() * 4) + 4) * 360;
+
+    let xDeg = 0, yDeg = 0;
+    switch (diceValue) {
+        case 1: xDeg = 0; yDeg = 0; break;
+        case 2: xDeg = -90; yDeg = 0; break;
+        case 3: xDeg = 0; yDeg = -90; break;
+        case 4: xDeg = 0; yDeg = 90; break;
+        case 5: xDeg = 90; yDeg = 0; break;
+        case 6: xDeg = 0; yDeg = 180; break;
+    }
+
+    if (cube) {
+        cube.style.transform = `rotateX(${xRotations + xDeg}deg) rotateY(${yRotations + yDeg}deg)`;
+    }
+
+    if (diceValue === 6) {
+        playAudio(soundSix, 1900);
+    }
+
+    setTimeout(async () => {
+        const moveableTokens = getMoveableTokens();
+
+        if (moveableTokens.length === 1) {
+            setTokensBounce(moveableTokens, true);
+            await delay(300);
+            handleTokenClick(moveableTokens[0], isRemote);
+        } else if (moveableTokens.length > 1) {
+            setTokensBounce(moveableTokens, true);
+        } else {
+            if (diceValue === 6) {
+                hasRolled = false;
+                updateDiceControls();
+            } else {
+                switchTurn();
+            }
+        }
+    }, 1000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    updateDiceBouncing();
+});

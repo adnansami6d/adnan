@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ব্রাউজার ডাটা ম্যানেজার</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #333;
+            text-align: center;
+        }
+
+        .actions-top {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 16px;
+            font-size: 14px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .btn-refresh {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-refresh:hover { background-color: #0056b3; }
+
+        .btn-clear-all {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-clear-all:hover { background-color: #a71d2a; }
+
+        .btn-delete {
+            background-color: #ff4d4d;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        .btn-delete:hover { background-color: #cc0000; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            word-break: break-all;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #555;
+        }
+
+        .empty-msg {
+            text-align: center;
+            color: #777;
+            padding: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>📂 সেভ থাকা ডাটা ম্যানেজার</h2>
+
+        <div class="actions-top">
+            <button class="btn-refresh" onclick="loadStorageData()">🔄 ডাটা রিফ্রেশ করুন</button>
+            <button class="btn-clear-all" onclick="clearAllData()">🗑️ সব ডাটা একসাথে মুছুন</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>কী (Key)</th>
+                    <th>মান (Value)</th>
+                    <th>অ্যাকশন</th>
+                </tr>
+            </thead>
+            <tbody id="data-list">
+                <!-- JavaScript দিয়ে ডাটা এখানে দেখাবে -->
+            </tbody>
+        </table>
+
+        <div id="empty-message" class="empty-msg" style="display: none;">
+            বর্তমানে কোনো ডাটা সেভ নেই!
+        </div>
+    </div>
+
+    <script>
+        // LocalStorage এর সব ডাটা টেবিলে রেন্ডার করার ফাংশন
+        function loadStorageData() {
+            const tableBody = document.getElementById('data-list');
+            const emptyMessage = document.getElementById('empty-message');
+            
+            tableBody.innerHTML = '';
+
+            if (localStorage.length === 0) {
+                emptyMessage.style.display = 'block';
+                return;
+            } else {
+                emptyMessage.style.display = 'none';
+            }
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${escapeHTML(key)}</strong></td>
+                    <td>${escapeHTML(value)}</td>
+                    <td>
+                        <button class="btn-delete" onclick="deleteSingleItem('${escapeHTML(key)}')">ডিলিট</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            }
+        }
+
+        // নির্দিষ্ট একটি কী (Key) ডিলিট করা
+        function deleteSingleItem(key) {
+            if (confirm(`আপনি কি "${key}" ডাটাটি মুছে ফেলতে চান?`)) {
+                localStorage.removeItem(key);
+                loadStorageData();
+            }
+        }
+
+        // সব ডাটা একসাথে ক্লিয়ার করা
+        function clearAllData() {
+            if (localStorage.length === 0) {
+                alert("মুছে ফেলার মতো কোনো ডাটা নেই!");
+                return;
+            }
+
+            if (confirm("আপনি কি নিশ্চিত যে সেভ থাকা সব ডাটা মুছে ফেলতে চান?")) {
+                localStorage.clear();
+                loadStorageData();
+            }
+        }
+
+        // HTML ইনজেকশন প্রতিরোধ করার হেল্পার
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+
+        // পেজ লোড হলে ডাটা দেখাবে
+        window.onload = loadStorageData;
+    </script>
+</body>
+  </html>
+  

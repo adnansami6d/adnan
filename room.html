@@ -3,87 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub PeerJS Connection Test</title>
-    <!-- HTTPS Supported PeerJS CDN -->
+    <title>লুডো অনলাইন - রুম তৈরি ও জয়েন</title>
+    <!-- PeerJS CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f4f4f9; }
-        .box { background: white; max-width: 400px; margin: 0 auto; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        input { width: 80%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; text-align: center; font-size: 16px; }
-        button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
-        button:hover { background: #218838; }
-        #status { font-weight: bold; color: #007bff; margin-top: 15px; }
-        #error { color: red; font-size: 14px; margin-top: 10px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .card {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-create {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-create:hover { background-color: #218838; }
+
+        .btn-join {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-join:hover { background-color: #0069d9; }
+
+        .btn-reconnect {
+            background-color: #ff9800;
+            color: white;
+        }
+
+        .divider {
+            margin: 15px 0;
+            font-weight: bold;
+            color: #777;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            text-align: center;
+            outline: none;
+        }
+
+        .room-display {
+            display: none;
+            margin-top: 15px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 6px;
+        }
+
+        .room-code {
+            font-size: 22px;
+            font-weight: bold;
+            color: #d9534f;
+            letter-spacing: 2px;
+        }
+
+        .status-msg {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        #reconnect-box {
+            display: none;
+            background: #fff3cd;
+            padding: 10px;
+            border: 1px solid #ffeeba;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
 
-    <div class="box">
-        <h2>লুডো অনলাইন পিয়ার টেস্ট</h2>
-        <p>আপনার রুম কোড: <br><b id="my-id" style="color: #d9534f; font-size: 22px;">তৈরি হচ্ছে...</b></p>
+    <div class="card">
+        <h2>অনলাইন লুডো গেম</h2>
 
-        <hr style="margin: 20px 0;">
+        <!-- রিকানেক্ট অপশন (যদি আগে খেলা শুরু হয়ে থাকে) -->
+        <div id="reconnect-box">
+            <p style="font-size: 13px; color: #856404; margin-bottom: 5px;">আপনি একটি চলমান গেম থেকে বিচ্ছিন্ন হয়েছেন!</p>
+            <button class="btn btn-reconnect" onclick="reconnectPreviousGame()">পূর্বের গেমে পুনরায় যুক্ত হন</button>
+        </div>
 
-        <input type="text" id="other-id-input" placeholder="অপনেন্টের রুম কোড দিন">
-        <br>
-        <button onclick="connectToPeer()">কানেক্ট করুন</button>
+        <!-- রুম ক্রিয়েট সেকশন -->
+        <button id="create-btn" class="btn btn-create" onclick="createNewRoom()">নতুন রুম ক্রিয়েট করুন</button>
 
-        <div id="status">স্ট্যাটাস: অপেক্ষা করা হচ্ছে...</div>
-        <div id="error"></div>
+        <div id="room-info" class="room-display">
+            <p style="font-size: 13px; color: #555;">আপনার রুম আইডি (অপনেন্টকে শেয়ার করুন):</p>
+            <span id="created-room-code" class="room-code">------</span>
+        </div>
+
+        <div class="divider">অথবা</div>
+
+        <!-- রুমে জয়েন সেকশন -->
+        <input type="text" id="room-code-input" placeholder="রুম কোড দিন (যেমন: 123456)">
+        <button class="btn btn-join" onclick="joinExistingRoom()">রুম জয়েন করুন</button>
+
+        <div id="status-message" class="status-msg"></div>
     </div>
 
     <script>
-        // Google STUN Server ব্যবহার করা হচ্ছে যেন GitHub Pages এ কানেক্ট হয়
-        const peer = new Peer('ludo-' + Math.floor(100000 + Math.random() * 900000), {
-            config: {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' }
-                ]
-            },
-            secure: true
-        });
+        let peer = null;
+        let myFullId = "";
 
-        // ১. আইডি তৈরি হলে স্ক্রিনে দেখানো
-        peer.on('open', (id) => {
-            document.getElementById('my-id').innerText = id;
-            document.getElementById('status').innerText = "স্ট্যাটাস: আপনার কোড তৈরি হয়েছে!";
-        });
+        // ১. পেজ লোড হলে চেক করবে আগের কোনো গেম সেশন আছে কিনা
+        window.onload = () => {
+            const savedRoom = localStorage.getItem('ludo_room_id');
+            const savedRole = localStorage.getItem('ludo_player_role');
+            if (savedRoom && savedRole) {
+                document.getElementById('reconnect-box').style.display = 'block';
+            }
+        };
 
-        // ২. কোনো এরর হলে স্ক্রিনে দেখানো
-        peer.on('error', (err) => {
-            console.error("PeerJS Error:", err);
-            document.getElementById('error').innerText = "এরর টাইপ: " + err.type;
-        });
-
-        // ৩. অন্য কোনো প্লেয়ার এই আইডিতে কানেক্ট করলে
-        peer.on('connection', (conn) => {
-            document.getElementById('status').innerText = "স্ট্যাটাস: অন্য প্লেয়ার কানেক্ট হয়েছে!";
-            
-            conn.on('data', (data) => {
-                alert("মেসেজ এসেছে: " + data);
+        // ২. PeerJS ইনিশিয়ালাইজ করা (Google STUN Server সহ)
+        function initPeer(customCode) {
+            myFullId = 'ludo-' + customCode;
+            peer = new Peer(myFullId, {
+                config: {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                },
+                secure: true
             });
-        });
 
-        // ৪. অপনেন্টের কোড দিয়ে কানেক্ট করা
-        function connectToPeer() {
-            const otherId = document.getElementById('other-id-input').value.trim();
-            if (!otherId) {
-                alert("দয়া করে অপনেন্টের আইডি কোডটি লিখুন!");
+            peer.on('error', (err) => {
+                console.error("Peer Error:", err);
+                if (err.type === 'unavailable-id') {
+                    alert("এই রুম আইডিটি বর্তমানে ব্যবহৃত হচ্ছে। অন্য কোড দিয়ে চেষ্টা করুন।");
+                } else {
+                    document.getElementById('status-message').innerText = "এরর: " + err.type;
+                }
+            });
+        }
+
+        // ৩. নতুন রুম ক্রিয়েট করা (Host - Red Player)
+        function createNewRoom() {
+            const rawCode = Math.floor(100000 + Math.random() * 900000).toString();
+            document.getElementById('created-room-code').innerText = rawCode;
+            document.getElementById('room-info').style.display = 'block';
+            document.getElementById('status-message').innerText = 'অপনেন্টের জন্য অপেক্ষা করা হচ্ছে...';
+
+            initPeer(rawCode);
+
+            // অপনেন্ট কানেক্ট করলে ইভেন্ট
+            peer.on('connection', (conn) => {
+                document.getElementById('status-message').innerText = 'প্লেয়ার যুক্ত হয়েছে! খেলা শুরু হচ্ছে...';
+                
+                // গেম তথ্য LocalStorage এ সেভ রাখা (রিকানেক্টের জন্য)
+                localStorage.setItem('ludo_room_id', rawCode);
+                localStorage.setItem('ludo_player_role', 'red');
+                localStorage.setItem('ludo_is_host', 'true');
+
+                // অপনেন্টকে কানেকশন নিশ্চিত করে গেম পেজে রিডাইরেক্ট করা
+                conn.on('open', () => {
+                    conn.send({ type: 'GAME_START' });
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+                });
+            });
+        }
+
+        // ৪. বিদ্যমান রুমে জয়েন করা (Guest - Yellow Player)
+        function joinExistingRoom() {
+            let inputCode = document.getElementById('room-code-input').value.trim();
+            if (!inputCode) {
+                alert('দয়া করে রুম কোড দিন!');
                 return;
             }
 
-            document.getElementById('status').innerText = "স্ট্যাটাস: কানেক্ট করার চেষ্টা চলছে...";
-            const conn = peer.connect(otherId);
+            // 'ludo-' প্রিফিক্স হ্যান্ডলিং
+            if (inputCode.startsWith('ludo-')) {
+                inputCode = inputCode.replace('ludo-', '');
+            }
 
-            conn.on('open', () => {
-                document.getElementById('status').innerText = "স্ট্যাটাস: সফলভাবে কানেক্টেড!";
-                conn.send("Hello! আমি আপনার গেমে যুক্ত হয়েছি।");
-            });
+            const guestCode = Math.floor(100000 + Math.random() * 900000).toString();
+            initPeer(guestCode);
 
-            conn.on('error', (err) => {
-                document.getElementById('error').innerText = "কানেকশন এরর: " + err;
+            peer.on('open', () => {
+                document.getElementById('status-message').innerText = 'হস্টের সাথে কানেক্ট হচ্ছে...';
+                const hostFullId = 'ludo-' + inputCode;
+                const conn = peer.connect(hostFullId);
+
+                conn.on('open', () => {
+                    document.getElementById('status-message').innerText = 'কানেক্টেড! খেলা শুরু হচ্ছে...';
+                    
+                    localStorage.setItem('ludo_room_id', inputCode);
+                    localStorage.setItem('ludo_player_role', 'yellow');
+                    localStorage.setItem('ludo_is_host', 'false');
+
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+                });
+
+                conn.on('error', (err) => {
+                    alert("রুম কোডটি সঠিক নয় অথবা হোস্ট অফলাইনে রয়েছে!");
+                });
             });
+        }
+
+        // ৫. ডিসকানেক্ট হওয়ার পর আবার রি-কানেক্ট হওয়া
+        function reconnectPreviousGame() {
+            const savedRoom = localStorage.getItem('ludo_room_id');
+            if (savedRoom) {
+                document.getElementById('status-message').innerText = 'পুনরায় গেমে রি-ডাইরেক্ট করা হচ্ছে...';
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 500);
+            }
         }
     </script>
 </body>

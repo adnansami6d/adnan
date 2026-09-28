@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PeerJS Test</title>
+    <!-- PeerJS Library -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+</head>
+<body style="font-family: sans-serif; text-align: center; padding: 20px;">
+
+    <h2>সার্ভার ছাড়া ডিরেক্ট কানেকশন টেস্ট</h2>
+    <p>আপনার আইডেন্টিটি কোড: <b id="my-id" style="color: red;">তৈরি হচ্ছে...</b></p>
+
+    <br>
+    <input type="text" id="other-id-input" placeholder="অপরজনের আইডি দিন">
+    <button onclick="connectToPeer()">কানেক্ট করুন</button>
+
+    <h3 id="status" style="margin-top: 20px; color: green;"></h3>
+
+    <script>
+        // ১. একটি র্যান্ডম আইডি নিয়ে পিয়ার জেনারেট করা
+        const myRandomId = 'ludo-' + Math.floor(1000 + Math.random() * 9000);
+        const peer = new Peer(myRandomId);
+
+        peer.on('open', (id) => {
+            document.getElementById('my-id').innerText = id;
+        });
+
+        // ২. অপনেন্ট কানেক্ট করলে ডাটা রিসিভ করা
+        peer.on('connection', (conn) => {
+            document.getElementById('status').innerText = "অন্য প্লেয়ার আপনার সাথে কানেক্ট হয়েছে!";
+            
+            conn.on('data', (data) => {
+                alert("মেসেজ এসেছে: " + data);
+            });
+        });
+
+        // ৩. অন্য প্লেয়ারের আইডিতে কানেক্ট করা
+        function connectToPeer() {
+            const otherId = document.getElementById('other-id-input').value.trim();
+            const conn = peer.connect(otherId);
+
+            conn.on('open', () => {
+                document.getElementById('status').innerText = "কানেক্টেড! টেস্ট মেসেজ পাঠানো হচ্ছে...";
+                conn.send("Hello! আমি কানেক্ট হয়েছি।");
+            });
+        }
+    </script>
+</body>
+</html>

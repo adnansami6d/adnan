@@ -1,13 +1,13 @@
 /**
- * server.js - Central Express Server & API Handler
- * এই ফাইলটি আপনার হোস্টিংয়ে (Render/Railway/Vercel) ব্যাকএন্ড হিসেবে রান করবে।
+ * server.js - Central Express Server & Ludo Game API Handler
+ * এই ফাইলটি সম্পূর্ণ সিকিউর এবং বাগ-মুক্ত ব্যাকএন্ড ইঞ্জিন হিসেবে কাজ করবে।
  */
 
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
-// ১. সিকিউর API ফাইল দুটি সার্ভারে ইম্পোর্ট/রিকোয়ার করা
+// ১. ব্যাকএন্ডের সিকিউর লজিক ও ডাইস অ্যালগরিদম মডিউল ইম্পোর্ট
 const { rollDiceAPI, addPenalty, resetConsecutiveSixes } = require('./api/dice');
 const { 
     SAFE_CELLS, 
@@ -20,21 +20,24 @@ const {
 
 const app = express();
 
-// মিডলওয়্যার কনফিগারেশন
-app.use(cors()); // সকল ডোমেন বা ক্লায়েন্ট থেকে রিকোয়েস্ট এলাউ করার জন্য
+// ২. প্রয়োজনীয় মিডলওয়্যার
+app.use(cors());
 app.use(express.json());
 
-// ২. কেবল পাবলিক স্ট্যাটিক ফাইলগুলো ব্রাউজারে সার্ভ করা (HTML/CSS/JS/Sound)
-// api/ ফোল্ডারটি এখানে অন্তর্ভুক্ত নেই, তাই ফ্রন্টএন্ড থেকে ফাইলগুলো দেখা যাবে না
-app.use(express.static(__dirname));
+// স্ট্যাটিক ফাইল ফ্রন্টএন্ডে রেন্ডার করার কনফিগারেশন
+app.use(express.static(path.join(__dirname)));
 
-// ৩. ইন-মেমোরি রুম গেম স্টেট (Active Games in Server RAM)
+// ৩. ইন-মেমোরি গেম স্টেট হোল্ডার (Active Games in Server RAM)
 const activeGames = {};
 
-// রুম স্টেট ইনিশিয়ালাইজেশন হেল্পার
+/**
+ * গেম রুম স্টেট ইনিশিয়ালাইজ করার হেল্পার ফাংশন
+ */
 function getOrCreateRoomState(roomId) {
-    if (!activeGames[roomId]) {
-        activeGames[roomId] = {
+    const validRoomId = roomId && roomId.trim() !== '' ? roomId : 'default_room';
+
+    if (!activeGames[validRoomId]) {
+        activeGames[validRoomId] = {
             currentTurn: 'red',
             diceValue: 0,
             hasRolled: false,
@@ -50,124 +53,151 @@ function getOrCreateRoomState(roomId) {
             }
         };
     }
-    return activeGames[roomId];
+    return activeGames[validRoomId];
 }
 
 // ==========================================
-// ৪. সিকিউর API এ্যান্ডপয়েন্টসমূহ (REST APIs)
+// ৪. ব্যাকএন্ড API এ্যান্ডপয়েন্টসমূহ
 // ==========================================
 
-// ৪.১ সার্ভার হেলথ চেক এ্যান্ডপয়েন্ট
+// ৪.১ সার্ভার স্টেট টেস্ট হেলথ চেক
 app.get('/api/status', (req, res) => {
-    res.json({ status: "Online", message: "Ludo Secure Logic Server Active" });
+    res.json({ status: "Online", message: "Ludo Game Engine is Running Properly!" });
 });
 
 // ৪.২ ডাইস রোলিং এ্যান্ডপয়েন্ট (/api/roll-dice)
 app.post('/api/roll-dice', (req, res) => {
-    const { roomId, player } = req.body;
-    const game = getOrCreateRoomState(roomId || 'default_room');
+    try {
+        const { roomId, player } = req.body;
 
-    // সিকিউরিটি চেক: প্লেয়ারের টার্ন সঠিক আছে কি না
-    if (game.currentTurn !== player) {
-        return res.status(400).json({ error: "এখন আপনার চালের সময় নয়!" });
-    }
+        if (!player || (player !== 'red' && player !== 'yellow')) {
+            return res.status(400).json({ success: false, error: "অবৈধ প্লেয়ার!" });
+        }
 
-    if (game.hasRolled) {
-        return res.status(400).json({ error: "আপনি অলরেডি ডাইস চাল দিয়েছেন!" });
-    }
+        const game = getOrCreateRoomState(roomId);
 
-    // api/dice.js এর সিকিউর স্মার্ট অ্যালগরিদম কল করা
-    const diceResult = rollDiceAPI(player, game.tokens, PATHS, SAFE_CELLS);
-    
-    game.diceValue = diceResult.diceValue;
-    game.hasRolled = true;
+        // চালের নিরাপত্তা যাচাই
+        if (game.currentTurn !== player) {
+            return res.status(400).json({ success: false, error: "এখন আপনার চালের সময় নয়!" });
+        }
 
-    // চালযোগ্য গুটি আছে কিনা বের করা
-    const moveableTokens = getMoveableTokens(game.tokens, player, game.diceValue);
+        if (game.hasRolled) {
+            return res.status(400).json({ success: false, error: "আপনি অলরেডি ডাইস চাল দিয়েছেন!" });
+        }
 
-    res.json({
-        success: true,
-        diceValue: game.diceValue,
-        consecutiveSixes: diceResult.consecutiveSixes,
-        moveableTokens: moveableTokens,
-        hasMoveableToken: moveableTokens.length > 0
-    });
-});
+        // সিকিউর অ্যালগরিদম দিয়ে ডাইসের মান তৈরি
+        const diceResult = rollDiceAPI(player, game.tokens, PATHS, SAFE_CELLS);
+        
+        game.diceValue = diceResult.diceValue;
+        game.hasRolled = true;
 
-// ৪.৩ গুটি মুভমেন্ট ও ভ্যালিডেশন এ্যান্ডপয়েন্ট (/api/move-token)
-app.post('/api/move-token', (req, res) => {
-    const { roomId, tokenId, player } = req.body;
-    const game = getOrCreateRoomState(roomId || 'default_room');
+        // চাল দেওয়ার মতো গুটি ফিল্টার করা
+        const moveableTokens = getMoveableTokens(game.tokens, player, game.diceValue);
 
-    // সিকিউরিটি চেক
-    if (game.currentTurn !== player) {
-        return res.status(400).json({ error: "অবৈধ চাল চেষ্টা করা হয়েছে!" });
-    }
+        // যদি চাল দেওয়ার মতো কোনো গুটি না থাকে, তবে অটোমেটিক টার্ন রিসেট করার ব্যবস্থা
+        if (moveableTokens.length === 0 && game.diceValue !== 6) {
+            game.hasRolled = false;
+            game.diceValue = 0;
+            game.currentTurn = (player === 'red') ? 'yellow' : 'red';
+            resetConsecutiveSixes(player);
+        }
 
-    if (!game.hasRolled || game.diceValue === 0) {
-        return res.status(400).json({ error: "আগে ডাইস রোল করতে হবে!" });
-    }
-
-    // api/logic.js দিয়ে চাল ভ্যালিডেশন
-    const moveResult = validateAndCalculateMove(tokenId, game.diceValue, game.tokens, player);
-
-    if (!moveResult.isValid) {
-        return res.json({ validMove: false, message: moveResult.reason });
-    }
-
-    // ব্যাকএন্ড স্টেটে গুটির নতুন অবস্থান আপডেট
-    game.tokens[tokenId].pathIndex = moveResult.newIndex;
-    if (moveResult.isFinished) {
-        game.tokens[tokenId].isFinished = true;
-    }
-
-    // গুটি খাওয়ার মেকানিক্স চেক
-    const eatResult = checkEatMechanics(tokenId, moveResult.newIndex, game.tokens, player);
-
-    if (eatResult.hasEaten) {
-        // খাওয়া যাওয়া গুটিগুলোকে বেসে ফেরত পাঠানো
-        eatResult.eatenTokenIds.forEach(eatenId => {
-            game.tokens[eatenId].pathIndex = -1;
-            const eatenColor = game.tokens[eatenId].color;
-            addPenalty(eatenColor, 0.02); // অপোনেন্টের জন্য লাক পেনাল্টি
+        return res.json({
+            success: true,
+            diceValue: diceResult.diceValue,
+            consecutiveSixes: diceResult.consecutiveSixes,
+            moveableTokens: moveableTokens,
+            hasMoveableToken: moveableTokens.length > 0,
+            nextTurn: game.currentTurn
         });
+    } catch (err) {
+        console.error("Roll Dice Error:", err);
+        return res.status(500).json({ success: false, error: "সার্ভারে সমস্যা হয়েছে!" });
     }
-
-    // বিজয়ী চেক
-    const isWinner = checkWinState(game.tokens, player);
-
-    // পরবর্তী টার্ন পরিবর্তন বা ধরে রাখা
-    let extraTurn = (game.diceValue === 6 || eatResult.hasEaten || moveResult.isFinished);
-    
-    if (!extraTurn) {
-        game.currentTurn = (player === 'red') ? 'yellow' : 'red';
-        resetConsecutiveSixes(player);
-    }
-
-    game.hasRolled = false;
-    const lastDiceValue = game.diceValue;
-    game.diceValue = 0; // ডাইস মান রিসেট
-
-    res.json({
-        validMove: true,
-        tokenId: tokenId,
-        targetCellId: moveResult.targetCellId,
-        isFinished: moveResult.isFinished,
-        hasEaten: eatResult.hasEaten,
-        eatenTokens: eatResult.eatenTokenIds,
-        isWinner: isWinner,
-        extraTurn: extraTurn,
-        nextTurn: game.currentTurn,
-        diceValueUsed: lastDiceValue
-    });
 });
 
-// ৫. সার্ভার পোর্ট লিসেনিং
+// ৪.৩ গুটি মুভমেন্ট ও চাল ভ্যালিডেশন এ্যান্ডপয়েন্ট (/api/move-token)
+app.post('/api/move-token', (req, res) => {
+    try {
+        const { roomId, tokenId, player } = req.body;
+        const game = getOrCreateRoomState(roomId);
+
+        // ভ্যালিডেশন চেক
+        if (game.currentTurn !== player) {
+            return res.status(400).json({ validMove: false, message: "অবৈধ চাল চেষ্টা করা হয়েছে!" });
+        }
+
+        if (!game.hasRolled || game.diceValue === 0) {
+            return res.status(400).json({ validMove: false, message: "আগে ডাইস রোল করতে হবে!" });
+        }
+
+        // গুটি মুভমেন্ট যাচাই
+        const moveResult = validateAndCalculateMove(tokenId, game.diceValue, game.tokens, player);
+
+        if (!moveResult.isValid) {
+            return res.json({ validMove: false, message: moveResult.reason });
+        }
+
+        // ব্যাকএন্ড স্টেট আপডেট
+        game.tokens[tokenId].pathIndex = moveResult.newIndex;
+        if (moveResult.isFinished) {
+            game.tokens[tokenId].isFinished = true;
+        }
+
+        // অপোনেন্ট গুটি খাওয়ার মেকানিক্স চেক
+        const eatResult = checkEatMechanics(tokenId, moveResult.newIndex, game.tokens, player);
+
+        if (eatResult.hasEaten) {
+            eatResult.eatenTokenIds.forEach(eatenId => {
+                game.tokens[eatenId].pathIndex = -1; // গুটি বেসে ফেরত পাঠানো
+                const eatenColor = game.tokens[eatenId].color;
+                addPenalty(eatenColor, 0.02);
+            });
+        }
+
+        // বিজয় নির্ধারণ
+        const isWinner = checkWinState(game.tokens, player);
+
+        // অতিরিক্ত চাল পাওয়ার লজিক (৬ পড়লে, গুটি কাটলে বা বোর্ডে গুটি পাকালে)
+        let extraTurn = (game.diceValue === 6 || eatResult.hasEaten || moveResult.isFinished);
+        
+        if (!extraTurn) {
+            game.currentTurn = (player === 'red') ? 'yellow' : 'red';
+            resetConsecutiveSixes(player);
+        }
+
+        game.hasRolled = false;
+        const lastDiceValue = game.diceValue;
+        game.diceValue = 0;
+
+        return res.json({
+            validMove: true,
+            tokenId: tokenId,
+            targetCellId: moveResult.targetCellId,
+            isFinished: moveResult.isFinished,
+            hasEaten: eatResult.hasEaten,
+            eatenTokens: eatResult.eatenTokenIds,
+            isWinner: isWinner,
+            extraTurn: extraTurn,
+            nextTurn: game.currentTurn,
+            diceValueUsed: lastDiceValue
+        });
+    } catch (err) {
+        console.error("Move Token Error:", err);
+        return res.status(500).json({ validMove: false, message: "সার্ভার প্রসেসিং এরর!" });
+    }
+});
+
+// ৫. হোম রাউট রিডাইরেক্ট (রুম পেজে পাঠাতে)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'room.html'));
+});
+
+// ৬. সার্ভার পোর্ট লিসেনিং
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`=================================`);
-    console.log(`🚀 Ludo Server running on Port: ${PORT}`);
-    console.log(`🔒 API Directory protected in Node RAM`);
+    console.log(`🚀 Ludo Engine Server Running: http://localhost:${PORT}`);
     console.log(`=================================`);
 });
-                  
+            

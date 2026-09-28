@@ -319,3 +319,34 @@ body {
 .left   { transform: rotateY(-90deg) translateZ(25px); }
 .top    { transform: rotateX(90deg) translateZ(25px); }
 .bottom { transform: rotateX(-90deg) translateZ(25px); }
+/* ১. যার চাল তার ডাইস লাফানোর এনিমেশন */
+.dice-container.turn-bounce {
+    animation: diceBounce 0.8s infinite alternate ease-in-out;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+    border-radius: 50%;
+}
+
+@keyframes diceBounce {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.15) translateY(-5px); }
+}
+
+/* ২. যার চাল তার গুটি লাফানোর এনিমেশন */
+.token.token-bounce {
+    animation: tokenBounce 0.6s infinite alternate ease-in-out;
+}
+
+@keyframes tokenBounce {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-8px); }
+}
+
+/* ৩. অপোনেন্টের (হলুদ) জন্য বোর্ড উল্টানোর ক্লাস */
+.flip-board {
+    transform: rotate(180deg);
+}
+
+.flip-board .token, 
+.flip-board .dice-container {
+    transform: rotate(180deg);
+}

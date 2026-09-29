@@ -3,8 +3,8 @@ const soundSix = new Audio('six.mp3');
 const soundMove = new Audio('move.mp3');
 const eatSounds = [
     new Audio('eat1.mp3'),
-    new Audio('eat2.mp3'),
-    new Audio('eat3.mp3')
+    new Audio('eat2.mp3')
+    
 ];
 
 const soundHome = new Audio('home.mp3');

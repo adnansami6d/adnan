@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ARoshi's Playlist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+    --green:#087f4e;
+    --green-2:#0c9a60;
+    --dark:#063a27;
+    --ink:#12221b;
+    --muted:#718078;
+    --line:#e4eee9;
+    --soft:#eff8f3;
+    --bg:#f7faf8;
+    --white:#fff;
+    --shadow:0 18px 60px rgba(8,62,40,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+    min-height:100vh;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 5% 0%,rgba(8,127,78,.08),transparent 27%),
+      radial-gradient(circle at 96% 10%,rgba(12,154,96,.06),transparent 25%),
+      var(--bg);
+    font-family:"DM Sans","Hind Siliguri",sans-serif;
+    overflow-x:hidden;
+}
+button{font:inherit}
+button:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+
+/* HEADER */
+.header{
+    position:fixed;z-index:1000;top:0;left:0;width:100%;
+    height:74px;
+    background:rgba(255,255,255,.82);
+    backdrop-filter:blur(22px);
+    -webkit-backdrop-filter:blur(22px);
+    border-bottom:1px solid rgba(8,127,78,.08);
+}
+.header-inner{
+    width:min(1240px,calc(100% - 42px));height:100%;margin:auto;
+    display:flex;align-items:center;justify-content:space-between;
+}
+.brand{display:flex;align-items:center;gap:12px;color:var(--ink);text-decoration:none}
+.brand-icon{
+    width:40px;height:40px;border-radius:12px;
+    display:grid;place-items:center;color:#fff;
+    background:linear-gradient(145deg,#0c9a60,#05633e);
+    box-shadow:0 9px 25px rgba(8,127,78,.22);
+}
+.brand-icon svg{width:20px;height:20px}
+.brand-name{font-size:16px;font-weight:800;letter-spacing:-.4px}
+.brand-caption{font-size:8px;font-weight:800;letter-spacing:1.8px;color:var(--green);margin-top:4px;text-transform:uppercase}
+.header-right{display:flex;align-items:center;gap:9px}
+.live{
+    display:flex;align-items:center;gap:7px;
+    padding:8px 12px;border:1px solid #d8ebe1;border-radius:99px;
+    background:#f3faf6;color:#166844;font-size:10px;font-weight:800;
+}
+.live i{width:6px;height:6px;border-radius:50%;background:#1bb36f;box-shadow:0 0 0 4px rgba(27,179,111,.1)}
+
+/* MAIN */
+.main{width:min(1240px,calc(100% - 42px));margin:auto;padding:108px 0 55px}
+
+/* HERO */
+.hero{
+    position:relative;min-height:350px;overflow:hidden;border-radius:30px;
+    background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);
+    display:grid;grid-template-columns:1.2fr .8fr;
+}
+.hero-copy{padding:57px 55px;position:relative;z-index:2}
+.eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    color:var(--green);font-size:10px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;
+}
+.eyebrow:before{content:"";width:22px;height:1px;background:var(--green)}
+.hero h1{
+    margin-top:17px;max-width:690px;
+    font-size:clamp(46px,6vw,78px);line-height:.93;letter-spacing:-5px;
+    font-weight:800;color:var(--dark);
+}
+.hero h1 span{color:var(--green)}
+.hero p{max-width:570px;margin-top:22px;color:var(--muted);font-size:13px;line-height:1.8;font-weight:500}
+.hero-note{
+    display:inline-flex;align-items:center;gap:9px;margin-top:25px;
+    padding:9px 13px;border-radius:10px;background:var(--soft);border:1px solid #dceee5;
+    color:#24684c;font-size:10px;font-weight:700;
+}
+.hero-note svg{width:14px}
+
+/* HERO ART */
+.hero-art{position:relative;overflow:hidden;background:linear-gradient(145deg,#f4faf7,#e7f5ee)}
+.hero-art:before{
+    content:"";position:absolute;width:430px;height:430px;border-radius:50%;
+    left:50%;top:50%;transform:translate(-30%,-50%);
+    border:1px solid rgba(8,127,78,.1);
+    box-shadow:0 0 0 55px rgba(8,127,78,.025),0 0 0 110px rgba(8,127,78,.018);
+}
+.vinyl{
+    position:absolute;width:225px;height:225px;border-radius:50%;left:50%;top:50%;
+    transform:translate(-38%,-50%);
+    background:
+      radial-gradient(circle at center,#f7fff9 0 9px,transparent 10px),
+      repeating-radial-gradient(circle,#173c2c 0 2px,#102f23 3px 5px);
+    box-shadow:0 30px 60px rgba(3,54,34,.2);
+}
+.vinyl:after{
+    content:"AR";position:absolute;inset:0;margin:auto;width:54px;height:54px;border-radius:50%;
+    display:grid;place-items:center;background:linear-gradient(145deg,#0c9a60,#05633e);
+    color:#fff;font-size:15px;font-weight:800;letter-spacing:-1px;
+    box-shadow:0 7px 20px rgba(8,127,78,.3);
+}
+.art-card{
+    position:absolute;right:33px;bottom:32px;width:160px;padding:13px;border-radius:16px;
+    background:rgba(255,255,255,.8);border:1px solid rgba(255,255,255,.9);
+    box-shadow:0 18px 40px rgba(8,62,40,.12);backdrop-filter:blur(12px);
+}
+.art-card small{display:block;color:#7a8982;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:1.3px}
+.art-card strong{display:block;margin-top:5px;color:var(--dark);font-size:12px}
+
+/* LIBRARY BAR */
+.library-head{
+    margin-top:34px;display:flex;align-items:end;justify-content:space-between;gap:20px;
+}
+.heading h2{font-size:22px;letter-spacing:-.8px;font-weight:800}
+.heading p{margin-top:4px;color:#84918b;font-size:11px;font-weight:600}
+.filters{
+    display:flex;gap:5px;padding:5px;background:#fff;border:1px solid var(--line);
+    border-radius:14px;box-shadow:0 5px 20px rgba(10,65,42,.04);overflow-x:auto;scrollbar-width:none;
+}
+.filters::-webkit-scrollbar{display:none}
+.filter-btn{
+    white-space:nowrap;padding:9px 14px;border-radius:10px;border:0;background:transparent;
+    color:#66756e;font-size:11px;font-weight:800;cursor:pointer;transition:.25s;
+}
+.filter-btn:hover{background:#f0f8f4;color:var(--green)}
+.filter-btn.active{background:var(--green);color:#fff;box-shadow:0 6px 15px rgba(8,127,78,.2)}
+
+/* STATUS */
+#status-box{display:none;margin-top:20px;padding:13px 16px;text-align:center;border-radius:12px;font-size:12px;font-weight:700}
+.loading-msg{background:#f0f8f4;color:#176645;border:1px solid #d9ece2}
+.error-msg{background:#fff4f4;color:#a32b2b;border:1px solid #ffd9d9}
+
+/* GRID */
+.grid-container{
+    margin-top:22px;display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:20px;
+}
+
+/* CARD */
+.music-card{
+    position:relative;overflow:hidden;background:#fff;border:1px solid var(--line);
+    border-radius:21px;box-shadow:0 7px 26px rgba(8,62,40,.055);
+    transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s,border-color .35s;
+}
+.music-card:hover{transform:translateY(-7px);border-color:#cde5d9;box-shadow:0 22px 55px rgba(8,62,40,.12)}
+.music-card:after{
+    content:"";position:absolute;top:0;left:24px;right:24px;height:2px;
+    background:linear-gradient(90deg,transparent,var(--green),transparent);opacity:0;transition:.3s;
+}
+.music-card:hover:after{opacity:1}
+.player-wrapper{height:198px;position:relative;overflow:hidden;background:#10271d;cursor:pointer}
+.thumbnail-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s,filter .4s}
+.music-card:hover .thumbnail-img{transform:scale(1.05);filter:saturate(1.05)}
+.play-overlay{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(180deg,rgba(0,0,0,.03),rgba(0,20,12,.48))}
+.play-btn-icon{
+    width:58px;height:58px;border-radius:50%;display:grid;place-items:center;
+    background:rgba(255,255,255,.96);box-shadow:0 14px 32px rgba(0,0,0,.24);
+    transition:.35s cubic-bezier(.2,.8,.2,1);
+}
+.play-btn-icon:after{content:"";margin-left:4px;border-top:8px solid transparent;border-bottom:8px solid transparent;border-left:12px solid var(--green)}
+.music-card:hover .play-btn-icon{transform:scale(1.1)}
+.player-wrapper iframe{width:100%;height:100%;border:0;display:block}
+.card-content{padding:17px 18px 18px;min-height:151px;display:flex;flex-direction:column;gap:9px}
+.card-title{font-size:15px;line-height:1.4;font-weight:800;letter-spacing:-.25px;color:var(--ink)}
+.card-band{
+    width:max-content;max-width:100%;padding:5px 9px;border-radius:7px;
+    background:#eff8f3;border:1px solid #d9ece2;color:#176645;font-size:10px;font-weight:800;
+}
+.card-comment{
+    margin-top:auto;padding:9px 11px;border-radius:9px;background:#fafcfb;border:1px solid #edf2ef;
+    color:#6e7c75;font-size:10px;line-height:1.55;font-weight:500;
+}
+
+/* EMPTY */
+.empty-state{grid-column:1/-1;text-align:center;padding:75px 20px;background:#fff;border:1px solid var(--line);border-radius:20px}
+.empty-icon{width:55px;height:55px;margin:auto;display:grid;place-items:center;border-radius:15px;background:var(--soft);color:var(--green)}
+.empty-state strong{display:block;margin-top:15px;font-size:16px}
+.empty-state span{display:block;margin-top:5px;color:#87938d;font-size:11px}
+
+/* FOOTER */
+.footer{
+    margin-top:50px;padding-top:22px;border-top:1px solid #e4eee9;
+    display:flex;justify-content:space-between;color:#87938d;font-size:10px;font-weight:600;
+}
+.footer b{color:var(--green)}
+
+/* MOBILE */
+@media(max-width:850px){
+    .hero{grid-template-columns:1fr}
+    .hero-art{display:none}
+    .hero-copy{padding:45px 38px}
+    .library-head{align-items:stretch;flex-direction:column}
+    .filters{width:100%}
+}
+@media(max-width:600px){
+    .header{height:66px}
+    .header-inner{width:calc(100% - 24px)}
+    .brand-icon{width:36px;height:36px;border-radius:11px}
+    .brand-name{font-size:14px}
+    .brand-caption{font-size:7px}
+    .live{font-size:8px;padding:7px 9px}
+    .main{width:calc(100% - 24px);padding-top:87px}
+    .hero{border-radius:23px}
+    .hero-copy{padding:33px 24px}
+    .hero h1{font-size:43px;letter-spacing:-3px}
+    .hero p{font-size:11px;margin-top:18px}
+    .library-head{margin-top:27px}
+    .heading h2{font-size:19px}
+    .grid-container{grid-template-columns:1fr;gap:15px}
+    .player-wrapper{height:205px}
+    .footer{flex-direction:column;align-items:center;gap:7px}
+}
+@media(max-width:360px){
+    .live{display:none}
+    .hero h1{font-size:38px}
+}
+</style>
+</head>
+
+<body>
+
+<header class="header">
+<div class="header-inner">
+<a class="brand" href="#">
+<div class="brand-icon">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>
+</svg>
+</div>
+<div>
+<div class="brand-name">ARoshi's Playlist</div>
+<div class="brand-caption">Private Music Collection</div>
+</div>
+</a>
+<div class="header-right"><div class="live"><i></i> PLAYLIST ONLINE</div></div>
+</div>
+</header>
+
+<main class="main">
+
+<section class="hero">
+<div class="hero-copy">
+<div class="eyebrow">A curated listening space</div>
+<h1>Music that feels<br><span>like you.</span></h1>
+<p>প্রিয় গান, প্রিয় মুহূর্ত এবং নিজের মতো কিছু melodies—সবকিছু এক জায়গায়। একটি গান বেছে নিন, headphones পরুন, আর মুহূর্তটাকে enjoy করুন।</p>
+<div class="hero-note">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 12h18"/></svg>
+Curated for ARoshi
+</div>
+</div>
+<div class="hero-art">
+<div class="vinyl"></div>
+<div class="art-card"><small>Currently curated</small><strong>Sounds worth remembering.</strong></div>
+</div>
+</section>
+
+<section class="library-head">
+<div class="heading">
+<h2>Music Library</h2>
+<p>Choose a mood. Find a song.</p>
+</div>
+<div class="filters">
+<button class="filter-btn active" onclick="filterSongs('All',this)">All</button>
+<button class="filter-btn" onclick="filterSongs('Bangla Band',this)">Bangla Band</button>
+<button class="filter-btn" onclick="filterSongs('English',this)">English</button>
+<button class="filter-btn" onclick="filterSongs('Hindi',this)">Hindi</button>
+<button class="filter-btn" onclick="filterSongs('Sad',this)">Sad</button>
+</div>
+</section>
+
+<div id="status-box">গান লোড হচ্ছে...</div>
+<section class="grid-container" id="cardGrid"></section>
+
+<footer class="footer">
+<div><b>ARoshi's Playlist</b> · Personal Collection</div>
+<div>Music · Memories · Moments</div>
+</footer>
+
+</main>
+
+<script>
+const sheetId='1VUqMP-jag335---OBaQ4JStkcKskGlbD8Xvte102ZIs';
+const csvUrl=`https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+
+let allSongsData=[];
+let currentlyPlayingCard=null;
+
+async function fetchGoogleSheetData(){
+const statusBox=document.getElementById('status-box');
+statusBox.style.display='block';
+statusBox.className='loading-msg';
+statusBox.innerText='গান লোড হচ্ছে...';
+try{
+const response=await fetch(csvUrl);
+if(!response.ok)throw new Error(`HTTP Status: ${response.status}`);
+const csvText=await response.text();
+if(!csvText||csvText.trim()==='')throw new Error('Empty sheet');
+parseCSV(csvText);
+statusBox.style.display='none';
+}catch(error){
+console.error('Fetch Error:',error);
+statusBox.style.display='block';
+statusBox.className='error-msg';
+statusBox.innerText='গান লোড হয়নি! Google Sheet-এর Public permission চেক করুন।';
+}
+}
+
+function parseCSV(text){
+let lines=text.split('\n');
+allSongsData=[];
+for(let i=1;i<lines.length;i++){
+let line=lines[i].trim();
+if(!line)continue;
+let row=line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+if(row.length>=3){
+let cleanRow=row.map(item=>item.replace(/^"|"$/g,'').trim());
+let ytLink=cleanRow[2]||'';
+allSongsData.push({
+title:cleanRow[0]||'Unknown Title',
+band:cleanRow[1]||'Unknown Artist',
+youtubeLink:ytLink,
+youtubeId:extractYouTubeId(ytLink),
+type:cleanRow[3]||'General',
+comment:cleanRow[4]||'মিউজিক উপভোগ করুন!',
+stime:cleanRow[5]||''
+});
+}
+}
+displaySongs(allSongsData);
+}
+
+function extractYouTubeId(url){
+if(!url)return null;
+let regExp=/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+let match=url.match(regExp);
+return(match&&match[2].length===11)?match[2]:null;
+}
+
+function displaySongs(songs){
+const grid=document.getElementById('cardGrid');
+grid.innerHTML='';
+currentlyPlayingCard=null;
+
+if(songs.length===0){
+grid.innerHTML=`<div class="empty-state"><div class="empty-icon"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg></div><strong>কোনো গান পাওয়া যায়নি</strong><span>অন্য category নির্বাচন করে আবার চেষ্টা করুন।</span></div>`;
+return;
+}
+
+songs.forEach((song,index)=>{
+let card=document.createElement('div');
+card.className='music-card';
+card.dataset.index=index;
+
+let thumbnailUrl=song.youtubeId?`https://img.youtube.com/vi/${song.youtubeId}/hqdefault.jpg`:'';
+
+card.innerHTML=`
+<div class="player-wrapper" onclick="startVideoPlay(this,${index})">
+${song.youtubeId?`
+<img class="thumbnail-img" src="${thumbnailUrl}" alt="${song.title}" loading="lazy">
+<div class="play-overlay"><div class="play-btn-icon"></div></div>
+`:`<div style="height:100%;display:grid;place-items:center;color:#fff;font-size:12px">YouTube লিঙ্ক পাওয়া যায়নি</div>`}
+</div>
+<div class="card-content">
+<div class="card-title">${song.title}</div>
+<div class="card-band">${song.band}</div>
+<div class="card-comment">${song.comment}</div>
+</div>`;
+grid.appendChild(card);
+});
+}
+
+function startVideoPlay(wrapperElement,songIndex){
+const song=allSongsData[songIndex];
+if(!song||!song.youtubeId)return;
+const currentCard=wrapperElement.closest('.music-card');
+if(currentlyPlayingCard&&currentlyPlayingCard!==currentCard)stopVideoPlay(currentlyPlayingCard);
+let startParam=song.stime?`&start=${encodeURIComponent(song.stime)}`:'';
+wrapperElement.innerHTML=`<iframe src="https://www.youtube.com/embed/${song.youtubeId}?autoplay=1&rel=0${startParam}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+currentlyPlayingCard=currentCard;
+}
+
+function stopVideoPlay(cardElement){
+if(!cardElement)return;
+const songIndex=cardElement.dataset.index;
+const song=allSongsData[songIndex];
+if(song&&song.youtubeId){
+const wrapper=cardElement.querySelector('.player-wrapper');
+const thumbnailUrl=`https://img.youtube.com/vi/${song.youtubeId}/hqdefault.jpg`;
+wrapper.innerHTML=`<img class="thumbnail-img" src="${thumbnailUrl}" alt="${song.title}" loading="lazy"><div class="play-overlay"><div class="play-btn-icon"></div></div>`;
+}
+}
+
+function filterSongs(category,btnElement){
+document.querySelectorAll('.filter-btn').forEach(btn=>btn.classList.remove('active'));
+btnElement.classList.add('active');
+if(category==='All')displaySongs(allSongsData);
+else displaySongs(allSongsData.filter(song=>song.type.toLowerCase().includes(category.toLowerCase())));
+}
+
+window.onload=fetchGoogleSheetData;
+</script>
+</body>
+</html>

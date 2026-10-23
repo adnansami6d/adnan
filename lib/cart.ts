@@ -110,6 +110,7 @@ export function removeFromCart(variantId: number) {
 }
 
 export function clearCart() {
+  saveCoupon(null);
   write([]);
 }
 
@@ -117,3 +118,24 @@ export function clearCart() {
 export function toOrderItems(items: CartItem[]) {
   return items.map((i) => ({ variant_id: i.variantId, quantity: i.quantity }));
 }
+
+/* ---- coupon code chosen in the cart (re-checked by the server at checkout) ---- */
+const COUPON_KEY = "taz_coupon_v1";
+
+export function saveCoupon(code: string | null) {
+  try {
+    if (code) window.localStorage.setItem(COUPON_KEY, code);
+    else window.localStorage.removeItem(COUPON_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+export function loadCoupon(): string | null {
+  try {
+    return window.localStorage.getItem(COUPON_KEY);
+  } catch {
+    return null;
+  }
+    }
+    

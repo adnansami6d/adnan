@@ -29,3 +29,18 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   width: "device-width",
+  initialScale: 1,
+  themeColor: "#ffffff",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="bn" className={font.variable}>
+      <body className="flex min-h-screen flex-col bg-white font-sans text-neutral-900 antialiased">
+        <Navbar />
+        <main className="flex-1">{children}</main>
+        <Footer />
+      </body>
+    </html>
+  );
+}

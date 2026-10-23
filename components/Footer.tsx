@@ -29,6 +29,11 @@ export default function Footer() {
               </Link>
             </li>
             <li>
+              <Link href="/track" className="hover:underline">
+                অর্ডার ট্র্যাক করুন
+              </Link>
+            </li>
+            <li>
               <Link href="/account/orders" className="hover:underline">
                 আমার অর্ডার
               </Link>
@@ -56,4 +61,4 @@ export default function Footer() {
       </p>
     </footer>
   );
-}
+      }

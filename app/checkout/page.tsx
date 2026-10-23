@@ -260,9 +260,13 @@ export default function CheckoutPage() {
           <Link href="/products" className={buttonClasses("primary")}>
             আরও কেনাকাটা করুন
           </Link>
-          {loggedIn && (
+          {loggedIn ? (
             <Link href="/account/orders" className={buttonClasses("outline")}>
               আমার অর্ডার
+            </Link>
+          ) : (
+            <Link href={`/track?order=${encodeURIComponent(order.order_number)}`} className={buttonClasses("outline")}>
+              অর্ডার ট্র্যাক করুন
             </Link>
           )}
         </div>

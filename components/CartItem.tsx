@@ -1,141 +1,106 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import type { CartItem } from "@/lib/cart";
+import { taka } from "@/lib/format";
 
-/**
- * Guest-friendly cart stored in the browser (localStorage).
- * The price here is for DISPLAY only. The database recalculates every price in place_order().
- * Use only from client components ("use client").
- */
+/** Live data from the database for one cart line (price, stock, still on sale?) */
+export type LiveInfo = { price: number; stock: number; available: boolean };
 
-export type CartItem = {
-  variantId: number;
-  productId: number;
-  slug: string;
-  name: string;
-  size: string;
-  color: string;
-  image: string | null;
-  price: number; // display only
-  quantity: number;
+type Props = {
+  item: CartItem;
+  live: LiveInfo;
+  onQuantity: (variantId: number, quantity: number) => void;
+  onRemove: (variantId: number) => void;
 };
 
-const KEY = "taz_cart_v1";
-const EVENT = "taz-cart-change";
-const MAX_QTY = 20;
+export default function CartItemRow({ item, live, onQuantity, onRemove }: Props) {
+  const maxQty = Math.max(1, Math.min(20, live.stock));
+  const tooMany = live.available && item.quantity > live.stock;
+  const priceChanged = live.available && live.price !== item.price;
 
-const EMPTY: CartItem[] = [];
-let cachedRaw: string | null = null;
-let cachedValue: CartItem[] = EMPTY;
-
-function isValid(i: unknown): i is CartItem {
-  const x = i as CartItem;
   return (
-    !!x &&
-    typeof x.variantId === "number" &&
-    typeof x.quantity === "number" &&
-    x.quantity > 0 &&
-    typeof x.price === "number" &&
-    typeof x.name === "string"
+    <li className="flex gap-4 border-b border-neutral-200 py-4">
+      <Link
+        href={`/products/${item.slug}`}
+        className="relative h-24 w-20 shrink-0 overflow-hidden rounded-lg bg-neutral-100"
+      >
+        {item.image && (
+          <Image
+            src={item.image}
+            alt={item.name}
+            fill
+            sizes="80px"
+            className="object-cover"
+            unoptimized={item.image.includes("placehold.co")}
+          />
+        )}
+      </Link>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <Link href={`/products/${item.slug}`} className="line-clamp-2 font-medium hover:underline">
+              {item.name}
+            </Link>
+            <p className="text-sm text-neutral-500">
+              সাইজ: {item.size} · রং: {item.color}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onRemove(item.variantId)}
+            className="shrink-0 text-sm text-neutral-500 underline hover:text-red-600"
+          >
+            মুছুন
+          </button>
+        </div>
+
+        {!live.available ? (
+          <p className="mt-2 rounded bg-red-50 px-2 py-1 text-sm text-red-700">
+            এই আইটেম এখন পাওয়া যাচ্ছে না। অনুগ্রহ করে মুছে ফেলুন।
+          </p>
+        ) : (
+          <>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+              <div className="inline-flex items-center rounded-lg border border-neutral-300">
+                <button
+                  type="button"
+                  className="px-3 py-1 disabled:opacity-40"
+                  disabled={item.quantity <= 1}
+                  onClick={() => onQuantity(item.variantId, item.quantity - 1)}
+                  aria-label="কমান"
+                >
+                  −
+                </button>
+                <span className="min-w-8 text-center">{item.quantity}</span>
+                <button
+                  type="button"
+                  className="px-3 py-1 disabled:opacity-40"
+                  disabled={item.quantity >= maxQty}
+                  onClick={() => onQuantity(item.variantId, item.quantity + 1)}
+                  aria-label="বাড়ান"
+                >
+                  +
+                </button>
+              </div>
+              <p className="font-semibold">{taka(live.price * item.quantity)}</p>
+            </div>
+
+            <p className="mt-1 text-sm text-neutral-500">
+              প্রতিটি {taka(live.price)}
+              {priceChanged && <span className="ml-2 text-amber-700">(দাম বদলেছে)</span>}
+            </p>
+
+            {tooMany && (
+              <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-sm text-amber-800">
+                স্টকে মাত্র {live.stock}টি আছে। পরিমাণ কমিয়ে নিন।
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    </li>
   );
-}
-
-function read(): CartItem[] {
-  if (typeof window === "undefined") return EMPTY;
-  let raw: string | null = null;
-  try {
-    raw = window.localStorage.getItem(KEY);
-  } catch {
-    return EMPTY;
-  }
-  if (raw === cachedRaw) return cachedValue; // same reference until something changes
-  cachedRaw = raw;
-  try {
-    const parsed: unknown = raw ? JSON.parse(raw) : [];
-    cachedValue = Array.isArray(parsed) ? parsed.filter(isValid) : EMPTY;
-  } catch {
-    cachedValue = EMPTY;
-  }
-  return cachedValue;
-}
-
-function write(items: CartItem[]) {
-  try {
-    window.localStorage.setItem(KEY, JSON.stringify(items));
-  } catch {
-    // storage blocked (private mode etc.): cart just will not persist
-  }
-  window.dispatchEvent(new Event(EVENT));
-}
-
-function subscribe(callback: () => void) {
-  window.addEventListener(EVENT, callback);
-  window.addEventListener("storage", callback); // other tabs
-  return () => {
-    window.removeEventListener(EVENT, callback);
-    window.removeEventListener("storage", callback);
-  };
-}
-
-/** React hook: current cart, item count and subtotal (display only). */
-export function useCart() {
-  const items = useSyncExternalStore(subscribe, read, () => EMPTY);
-  const count = items.reduce((sum, i) => sum + i.quantity, 0);
-  const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  return { items, count, subtotal };
-}
-
-export function addToCart(item: Omit<CartItem, "quantity">, quantity = 1) {
-  const items = [...read()];
-  const existing = items.find((i) => i.variantId === item.variantId);
-  if (existing) {
-    existing.quantity = Math.min(existing.quantity + quantity, MAX_QTY);
-  } else {
-    items.push({ ...item, quantity: Math.min(quantity, MAX_QTY) });
-  }
-  write(items);
-}
-
-export function updateQuantity(variantId: number, quantity: number) {
-  if (quantity <= 0) return removeFromCart(variantId);
-  write(
-    read().map((i) =>
-      i.variantId === variantId ? { ...i, quantity: Math.min(quantity, MAX_QTY) } : i
-    )
-  );
-}
-
-export function removeFromCart(variantId: number) {
-  write(read().filter((i) => i.variantId !== variantId));
-}
-
-export function clearCart() {
-  saveCoupon(null);
-  write([]);
-}
-
-/** Shape expected by place_order(): prices are NOT sent. */
-export function toOrderItems(items: CartItem[]) {
-  return items.map((i) => ({ variant_id: i.variantId, quantity: i.quantity }));
-}
-
-/* ---- coupon code chosen in the cart (re-checked by the server at checkout) ---- */
-const COUPON_KEY = "taz_coupon_v1";
-
-export function saveCoupon(code: string | null) {
-  try {
-    if (code) window.localStorage.setItem(COUPON_KEY, code);
-    else window.localStorage.removeItem(COUPON_KEY);
-  } catch {
-    // ignore
-  }
-}
-
-export function loadCoupon(): string | null {
-  try {
-    return window.localStorage.getItem(COUPON_KEY);
-  } catch {
-    return null;
-  }
-                                             }
-      
+                }

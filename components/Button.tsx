@@ -4,10 +4,10 @@ export type ButtonVariant = "primary" | "outline" | "danger" | "ghost";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const variants: Record<ButtonVariant, string> = {
-  primary: "bg-neutral-900 text-white hover:bg-neutral-700",
-  outline: "border border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-100",
-  danger: "bg-red-600 text-white hover:bg-red-700",
-  ghost: "text-neutral-700 hover:bg-neutral-100",
+  primary: "bg-neutral-900 text-white hover:bg-neutral-700 active:bg-black",
+  outline: "border border-neutral-300 bg-white text-neutral-900 hover:bg-neutral-100 active:bg-neutral-200",
+  danger: "bg-red-600 text-white hover:bg-red-700 active:bg-red-800",
+  ghost: "text-neutral-700 hover:bg-neutral-100 active:bg-neutral-200",
 };
 
 const sizes: Record<ButtonSize, string> = {
@@ -18,7 +18,7 @@ const sizes: Record<ButtonSize, string> = {
 
 /** Use this to style a <Link> like a button: <Link className={buttonClasses("primary")} ...> */
 export function buttonClasses(variant: ButtonVariant = "primary", size: ButtonSize = "md", extra = "") {
-  return `inline-flex items-center justify-center rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${sizes[size]} ${extra}`;
+  return `inline-flex items-center justify-center rounded-lg font-medium transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${sizes[size]} ${extra}`;
 }
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -44,7 +44,14 @@ export default function Button({
       disabled={disabled || loading}
       className={buttonClasses(variant, size, className)}
     >
-      {loading ? "অপেক্ষা করুন..." : children}
+      {loading ? (
+        <span className="inline-flex items-center gap-2">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          অপেক্ষা করুন...
+        </span>
+      ) : (
+        children
+      )}
     </button>
   );
-}
+    }

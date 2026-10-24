@@ -3,17 +3,17 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { authErrorMessage, safeNextPath } from "@/lib/auth";
 import { loginSchema } from "@/lib/validators";
 import Button from "@/components/Button";
 
 const inputClass = "w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900";
+const SUPPORT_PHONE = process.env.NEXT_PUBLIC_CONTACT_PHONE;
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [next, setNext] = useState("/account");
@@ -28,7 +28,7 @@ export default function LoginPage() {
     if (loading) return;
     setError(null);
 
-    const parsed = loginSchema.safeParse({ email, password });
+    const parsed = loginSchema.safeParse({ phone, pin });
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "তথ্য সঠিক নয়।");
       return;
@@ -36,9 +36,15 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const { error: authError } = await createClient().auth.signInWithPassword(parsed.data);
-      if (authError) {
-        setError(authErrorMessage(authError.message));
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, pin }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok) {
+        setError(data?.message ?? authErrorMessage(data?.error ?? "x"));
+        setPin("");
         return;
       }
       router.push(next);
@@ -57,21 +63,25 @@ export default function LoginPage() {
 
       <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
         <label className="block">
-          <span className="mb-1 block text-sm font-medium">ইমেইল</span>
+          <span className="mb-1 block text-sm font-medium">ফোন নম্বর</span>
           <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
+            type="tel"
+            inputMode="numeric"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            autoComplete="tel"
+            placeholder="01XXXXXXXXX"
             className={inputClass}
           />
         </label>
         <label className="block">
-          <span className="mb-1 block text-sm font-medium">পাসওয়ার্ড</span>
+          <span className="mb-1 block text-sm font-medium">৪ সংখ্যার পিন</span>
           <input
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            inputMode="numeric"
+            maxLength={4}
+            value={pin}
+            onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
             autoComplete="current-password"
             className={inputClass}
           />
@@ -88,6 +98,17 @@ export default function LoginPage() {
         </Button>
       </form>
 
+      <p className="mt-4 text-center text-sm text-neutral-600">
+        পিন ভুলে গেছেন বা অ্যাকাউন্ট লক হয়েছে? সাপোর্টের সাথে যোগাযোগ করুন
+        {SUPPORT_PHONE ? (
+          <>
+            : <a href={`tel:${SUPPORT_PHONE}`} className="font-medium underline">{SUPPORT_PHONE}</a>
+          </>
+        ) : (
+          "।"
+        )}
+      </p>
+
       <p className="mt-6 text-center text-sm text-neutral-600">
         অ্যাকাউন্ট নেই?{" "}
         <Link href={next !== "/account" ? `/register?next=${encodeURIComponent(next)}` : "/register"} className="font-medium underline">
@@ -96,5 +117,5 @@ export default function LoginPage() {
       </p>
     </div>
   );
-}
-  
+            }
+      

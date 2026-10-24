@@ -17,12 +17,11 @@ export default async function AccountPage() {
   if (!user) redirect("/login?next=/account");
 
   const [{ data: profile }, { data: wallet }] = await Promise.all([
-    supabase.from("profiles").select("full_name, phone, phone_verified").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("full_name, phone").eq("id", user.id).maybeSingle(),
     supabase.from("wallets").select("balance").eq("user_id", user.id).maybeSingle(),
   ]);
 
   const isAdmin = user.app_metadata?.role === "admin";
-  const verified = profile?.phone_verified === true;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -34,22 +33,8 @@ export default async function AccountPage() {
       <section className="rounded-lg border border-neutral-200 p-4">
         <dl className="space-y-2 text-sm">
           <div className="flex justify-between gap-4">
-            <dt className="text-neutral-600">ইমেইল</dt>
-            <dd className="break-all">{user.email}</dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-neutral-600">মোবাইল</dt>
-            <dd>
-              {profile?.phone ?? "দেওয়া হয়নি"}{" "}
-              {profile?.phone &&
-                (verified ? (
-                  <span className="ml-1 rounded bg-green-100 px-2 py-0.5 text-xs text-green-800">ভেরিফাইড</span>
-                ) : (
-                  <Link href="/verify-phone" className="ml-1 rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
-                    ভেরিফাই করুন
-                  </Link>
-                ))}
-            </dd>
+            <dt className="text-neutral-600">ফোন নম্বর</dt>
+            <dd>{profile?.phone ?? "দেওয়া হয়নি"}</dd>
           </div>
           <div className="flex justify-between gap-4">
             <dt className="text-neutral-600">কয়েন ব্যালান্স</dt>
@@ -78,5 +63,5 @@ export default async function AccountPage() {
       </div>
     </div>
   );
-            }
-          
+      }
+            

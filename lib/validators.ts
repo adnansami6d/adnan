@@ -89,22 +89,19 @@ export const redeemSchema = z.object({
 });
 
 /* ------------------------------------------------------------------ */
-/* Auth                                                                 */
+/* Auth: phone number + 4-digit PIN                                     */
 /* ------------------------------------------------------------------ */
+export const pinSchema = z.string().regex(/^[0-9]{4}$/, "পিন ঠিক ৪টি সংখ্যার হতে হবে");
+
 export const registerSchema = z.object({
   full_name: z.string().trim().min(2, "নাম লিখুন").max(100),
   phone: bdPhone,
-  email: z.string().trim().toLowerCase().email("সঠিক ইমেইল দিন"),
-  password: z.string().min(8, "পাসওয়ার্ড কমপক্ষে ৮ অক্ষর").max(72),
+  pin: pinSchema,
 });
 
 export const loginSchema = z.object({
-  email: z.string().trim().toLowerCase().email("সঠিক ইমেইল দিন"),
-  password: z.string().min(1, "পাসওয়ার্ড দিন"),
-});
-
-export const otpCodeSchema = z.object({
-  code: z.string().trim().regex(/^[0-9]{6}$/, "৬ digit এর কোড দিন"),
+  phone: bdPhone,
+  pin: pinSchema,
 });
 
 /* ------------------------------------------------------------------ */
@@ -115,3 +112,15 @@ export type TopupInput = z.infer<typeof topupSchema>;
 export type RedeemInput = z.infer<typeof redeemSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+
+/* ------------------------------------------------------------------ */
+/* Forgot password: phone number + current coin balance                 */
+/* ------------------------------------------------------------------ */
+export const forgotPasswordSchema = z.object({
+  phone: bdPhone,
+  coins: z.number().int("কয়েনের সংখ্যা পূর্ণ সংখ্যা হতে হবে").min(0, "কয়েন ০ বা তার বেশি হতে হবে").max(10000000),
+  password: z.string().min(8, "পাসওয়ার্ড কমপক্ষে ৮ অক্ষর").max(72),
+});
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+  

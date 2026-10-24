@@ -4,17 +4,23 @@ export function safeNextPath(raw: string | null | undefined, fallback = "/accoun
   return fallback;
 }
 
-/** Turns Supabase auth error messages into Bangla for the visitor. */
-export function authErrorMessage(message: string): string {
-  const m = message.toLowerCase();
-  if (m.includes("invalid login credentials")) return "ইমেইল বা পাসওয়ার্ড ভুল।";
-  if (m.includes("email not confirmed")) return "আপনার ইমেইল এখনো নিশ্চিত করা হয়নি। ইমেইলের লিংকে চাপুন।";
+/** Turns auth error codes / messages (phone + PIN login) into Bangla for the visitor. */
+export function authErrorMessage(codeOrMessage: string): string {
+  const m = codeOrMessage.toLowerCase();
+
+  // codes from /api/auth/login and /api/auth/register
+  if (m === "invalid_credentials") return "ফোন নম্বর বা পিন ভুল।";
+  if (m === "wait") return "অনেকবার ভুল পিন দেওয়া হয়েছে। ১ ঘণ্টা পরে আবার চেষ্টা করুন।";
+  if (m === "locked") return "আপনার অ্যাকাউন্ট লক করা হয়েছে। সাপোর্টের সাথে যোগাযোগ করুন।";
+  if (m === "phone_exists") return "এই ফোন নম্বর দিয়ে আগেই অ্যাকাউন্ট খোলা আছে। লগইন করুন।";
+  if (m === "validation") return "তথ্য সঠিক নয়। ফোন নম্বর ও ৪ সংখ্যার পিন দিন।";
+
+  // fallbacks for raw messages
+  if (m.includes("invalid login credentials")) return "ফোন নম্বর বা পিন ভুল।";
   if (m.includes("already registered") || m.includes("already been registered")) {
-    return "এই ইমেইল দিয়ে আগেই অ্যাকাউন্ট খোলা আছে। লগইন করুন।";
+    return "এই ফোন নম্বর দিয়ে আগেই অ্যাকাউন্ট খোলা আছে। লগইন করুন।";
   }
-  if (m.includes("password") && m.includes("least")) return "পাসওয়ার্ড আরও বড় দিন (কমপক্ষে ৮ অক্ষর)।";
   if (m.includes("rate limit") || m.includes("too many")) return "অনেকবার চেষ্টা হয়েছে। কিছুক্ষণ পরে আবার চেষ্টা করুন।";
   if (m.includes("network") || m.includes("fetch")) return "ইন্টারনেট সংযোগ চেক করে আবার চেষ্টা করুন।";
   return "কিছু একটা সমস্যা হয়েছে। আবার চেষ্টা করুন।";
 }
-  

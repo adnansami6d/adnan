@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05030f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Neon Texas Hold'em</title>
+<!-- সব ডিজাইন শুধু style.css এ। এই ফাইলে শুধু কাঠামো (structure)। -->
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- #stage: সব কিছুর মোড়ক। ফোন সোজা ধরা থাকলে pokerdevice.js এটাকে ৯০° ঘুরিয়ে ল্যান্ডস্কেপ বানায় -->
+<div id="stage">
+
+  <!-- ============ START SCREEN ============ -->
+  <div id="start-screen" class="overlay">
+    <div class="start-bg"></div>
+    <div class="start-card">
+      <div class="start-logo">♠</div>
+      <h1 class="start-title">TEXAS <span>HOLD'EM</span></h1>
+      <p class="start-sub">PLAY &bull; WIN &bull; BE LEGENDARY</p>
+      <div class="start-balance">
+        <span class="chip-icon"></span>
+        <span id="start-balance">0</span>
+      </div>
+      <button id="start-btn" class="btn btn-start">START GAME</button>
+      <p class="start-note">অনলাইন গেম &middot; ইন্টারনেট ও মাইক লাগবে</p>
+    </div>
+  </div>
+
+  <!-- ============ GAME ============ -->
+  <div id="game" class="hidden">
+
+    <div class="bg-city"></div>
+    <div class="bg-vignette"></div>
+
+    <!-- উপরের বাটন -->
+    <button id="btn-exit" class="icon-btn top-left" aria-label="Back">&#10094;</button>
+    <button id="btn-settings" class="icon-btn top-left-2" aria-label="Settings">&#9881;</button>
+    <button id="btn-fullscreen" class="icon-btn top-right" aria-label="Fullscreen">&#9974;</button>
+
+    <!-- টেবিল -->
+    <div id="table" class="table">
+      <div class="table-rim"></div>
+      <div class="table-felt">
+        <div class="table-logo">
+          <div class="logo-spade">♠</div>
+          <div class="logo-text">TEXAS HOLD'EM</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ডিলার ও পট -->
+    <div class="dealer">
+      <div class="dealer-avatar"><span class="face"></span></div>
+      <div class="dealer-tag">DEALER</div>
+    </div>
+    <div id="dealer-say" class="dealer-say"></div>
+
+    <div id="pot-box" class="pot-box">
+      <div id="dealer-chips" class="chip-stack"></div>
+      <div class="phase-pill" id="phase-label">PRE-FLOP</div>
+      <div class="pot-label">POT</div>
+      <div id="pot-amount" class="pot-amount">0</div>
+    </div>
+
+    <!-- বোর্ডের ৫ কার্ড -->
+    <div id="community" class="community">
+      <div class="slot"></div>
+      <div class="slot"></div>
+      <div class="slot"></div>
+      <div class="slot"></div>
+      <div class="slot"></div>
+    </div>
+
+    <div id="message" class="message"></div>
+
+    <!-- ঘোষণা, কাউন্টডাউন, টেবিল ফাঁকা (বড় পপআপ নয়, টেবিলের উপর লেখা) -->
+    <div id="announce" class="announce"></div>
+    <div id="countdown" class="countdown"></div>
+    <div id="table-empty" class="table-empty">
+      <div class="t-title"></div>
+      <div class="t-sub"></div>
+    </div>
+
+    <!-- সিট: 0 = You (নিচে), 1..4 = বট -->
+    <div class="seat seat-user" id="seat-0" data-seat="0">
+      <div class="hole-cards"></div>
+      <div class="avatar av-0"><span class="face"></span></div>
+      <div class="nameplate">
+        <div class="name">You</div>
+        <div class="chips"><span class="chip-icon"></span><span class="chips-value">0</span></div>
+      </div>
+      <div class="bet-badge"></div>
+      <div class="status-badge"></div>
+      <div class="dealer-btn">D</div>
+    </div>
+
+    <div class="seat seat-bl" id="seat-1" data-seat="1">
+      <div class="hole-cards"></div>
+      <div class="avatar av-1"><span class="face"></span></div>
+      <div class="nameplate">
+        <div class="name">Sujat</div>
+        <div class="chips"><span class="chip-icon"></span><span class="chips-value">0</span></div>
+      </div>
+      <div class="bet-badge"></div>
+      <div class="status-badge"></div>
+      <div class="dealer-btn">D</div>
+    </div>
+
+    <div class="seat seat-tl" id="seat-2" data-seat="2">
+      <div class="hole-cards"></div>
+      <div class="avatar av-2"><span class="face"></span></div>
+      <div class="nameplate">
+        <div class="name">Hossain</div>
+        <div class="chips"><span class="chip-icon"></span><span class="chips-value">0</span></div>
+      </div>
+      <div class="bet-badge"></div>
+      <div class="status-badge"></div>
+      <div class="dealer-btn">D</div>
+    </div>
+
+    <div class="seat seat-tr" id="seat-3" data-seat="3">
+      <div class="hole-cards"></div>
+      <div class="avatar av-3"><span class="face"></span></div>
+      <div class="nameplate">
+        <div class="name">ACEbyjks</div>
+        <div class="chips"><span class="chip-icon"></span><span class="chips-value">0</span></div>
+      </div>
+      <div class="bet-badge"></div>
+      <div class="status-badge"></div>
+      <div class="dealer-btn">D</div>
+    </div>
+
+    <div class="seat seat-br" id="seat-4" data-seat="4">
+      <div class="hole-cards"></div>
+      <div class="avatar av-4"><span class="face"></span></div>
+      <div class="nameplate">
+        <div class="name">All maro</div>
+        <div class="chips"><span class="chip-icon"></span><span class="chips-value">0</span></div>
+      </div>
+      <div class="bet-badge"></div>
+      <div class="status-badge"></div>
+      <div class="dealer-btn">D</div>
+    </div>
+
+    <!-- নিচের এক সারির বাটন: FOLD, CHECK/CALL, RAISE -->
+    <div id="actions" class="actions disabled">
+      <div id="raise-panel" class="raise-panel">
+        <div class="raise-head"><span>RAISE TO</span></div>
+        <!-- pokerrender.js এখানে ৫টা লেভেল বাটন বসায় (নিচে ন্যূনতম, উপরে ALL-IN) -->
+        <div id="raise-levels" class="raise-levels"></div>
+        <button id="btn-raise-confirm" class="btn btn-raise-ok">CONFIRM</button>
+      </div>
+
+      <div class="action-row">
+        <button id="btn-fold" class="btn btn-fold">FOLD</button>
+        <button id="btn-check" class="btn btn-check">CHECK</button>
+        <button id="btn-call" class="btn btn-call">CALL</button>
+        <button id="btn-raise" class="btn btn-raise">RAISE</button>
+      </div>
+    </div>
+
+    <div class="tagline">PLAY &bull; WIN &bull; BE LEGENDARY</div>
+
+    <!-- উড়ন্ত কয়েনের স্তর -->
+    <div id="fx-layer" class="fx-layer"></div>
+  </div>
+
+  <!-- ============ সেটিংস ============ -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="result-title">SETTINGS</div>
+      <button id="btn-sound" class="btn btn-check">SOUND: ON</button>
+      <button id="btn-reset-balance" class="btn btn-fold">RESET BALANCE</button>
+      <button id="btn-settings-close" class="btn btn-call">CLOSE</button>
+    </div>
+  </div>
+
+  <!-- ============ গেম ওভার (সাধারণ, শুধু রিসেট) ============ -->
+  <div id="gameover" class="modal hidden">
+    <div class="modal-card lose">
+      <div id="go-title" class="result-title"></div>
+      <div id="go-sub" class="result-hand"></div>
+      <button id="btn-playagain" class="btn btn-start"></button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+</div>
+
+<!-- লোডের ক্রম গুরুত্বপূর্ণ -->
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="pokerconfig.js"></script>
+<script src="pokercards.js"></script>
+<script src="pokerengine.js"></script>
+<script src="pokerbots.js"></script>
+<script src="pokeraudio.js"></script>
+<script src="pokerdevice.js"></script>
+<script src="pokerrender.js"></script>
+<script src="pokernetv2.js"></script>
+<script src="pokergamev2.js"></script>
+</body>
+</html>

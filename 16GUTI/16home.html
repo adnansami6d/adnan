@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0b0f19">
+    <title>Game Bazz - ষোলো গুটি</title>
+
+    <!-- নিয়ন ফন্ট -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;800&display=swap" rel="stylesheet">
+
+    <!-- PeerJS: খেলার লাইভ যোগাযোগ (চাল পাঠানো) -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+    <link rel="stylesheet" href="16home.css">
+</head>
+<body>
+
+    <!-- ==========================================================
+         ১. ফেসবুক/মেসেঞ্জারের ইন-অ্যাপ ব্রাউজারের সতর্কবার
+            (16extras.js শুধু ওই ব্রাউজারে খুললেই দেখাবে)
+         ========================================================== -->
+    <div id="inapp-banner" class="inapp-banner" hidden>
+        <span class="inapp-text">⚠️ মেসেঞ্জারের ব্রাউজারে গেম কেটে যেতে পারে। <b>Chrome-এ</b> খুলুন।</span>
+        <button id="open-chrome-btn" class="mini-btn mini-btn-neon" type="button">Chrome-এ খুলুন</button>
+        <button id="inapp-close-btn" class="mini-btn" type="button" aria-label="বন্ধ করুন">✕</button>
+    </div>
+
+    <!-- ==========================================================
+         ২. উপরের স্ট্যাটাস বার (লোগো + কানেকশন + রুম + বাটন)
+         ========================================================== -->
+    <div id="hud" class="hud">
+        <div class="hud-left">
+            <div class="gamebazz-logo-badge">
+                <span class="logo-icon">🎲</span>
+                <span class="logo-text">Game Bazz</span>
+            </div>
+        </div>
+
+        <div class="hud-right">
+            <span id="conn-dot" class="conn-dot conn-off" title="কানেকশন"></span>
+            <span id="room-title" class="room-title"></span>
+            <button id="reset-btn" class="mini-btn" type="button">🔄 New game</button>
+            <button id="lobby-btn" class="mini-btn" type="button">Home</button>
+        </div>
+    </div>
+
+    <!-- কার চাল চলছে তার ব্যাজ -->
+    <div id="turn-badge" class="turn-badge" hidden></div>
+
+    <!-- ==========================================================
+         ৩. লবি পপআপ: নতুন রুম (৩ সংখ্যার পিন) বা পিন দিয়ে জয়েন
+            রুম আইডি হবে: Sholo-guti + পিন (যেমন Sholo-guti123)
+         ========================================================== -->
+    <div id="lobby-overlay" class="overlay">
+        <div class="lobby-card">
+            <h2>অনলাইন ষোলো গুটি 🎯</h2>
+
+            <!-- মেনু -->
+            <div id="lobby-menu">
+                <p class="conn-msg first">নতুন রুম খুলতে একটি ৩ সংখ্যার পিন দিন</p>
+                <input id="create-pin" class="pin-input" type="text" inputmode="numeric" maxlength="3"
+                       autocomplete="off" placeholder="যেমন: 123">
+                <button id="create-room-btn" class="restart-btn" type="button">🎮 নতুন রুম খুলুন</button>
+
+                <div class="divider"></div>
+
+                <p class="conn-msg first">বন্ধুর রুমে ঢুকতে তার পিন লিখুন</p>
+                <input id="join-pin" class="pin-input" type="text" inputmode="numeric" maxlength="3"
+                       autocomplete="off" placeholder="বন্ধুর পিন">
+                <button id="join-room-btn" class="ghost-btn" type="button">🔑 জয়েন করুন</button>
+            </div>
+
+            <!-- রুম খোলার পর অপেক্ষা -->
+            <div id="lobby-wait" hidden>
+                <p class="conn-msg first">আপনার রুমের পিন</p>
+                <div id="room-pin-display" class="pin-display"></div>
+                <p class="conn-msg">বন্ধুকে এই পিনটি বলুন। সে পিন দিয়ে জয়েন করলেই খেলা শুরু।</p>
+                <div class="spinner"></div>
+                <button id="wait-cancel-btn" class="ghost-btn" type="button">বাতিল</button>
+            </div>
+
+            <p id="lobby-msg" class="conn-msg lobby-error" hidden></p>
+        </div>
+    </div>
+
+    <!-- সংযোগ বিচ্ছিন্ন হলে (খেলা শেষ) -->
+    <div id="conn-overlay" class="overlay" hidden>
+        <div class="lobby-card">
+            <h2 id="conn-title">খেলা শেষ</h2>
+            <p id="conn-msg" class="conn-msg"></p>
+            <button id="conn-lobby-btn" class="restart-btn" type="button">🏠 লবিতে ফিরুন</button>
+        </div>
+    </div>
+
+    <!-- ভয়েস চ্যাট মাইক বাটন (16extras.js চালাবে) -->
+    <div id="voice-widget" class="voice-widget" hidden>
+        <span>🎙️</span>
+        <button id="mic-btn" class="mini-btn" type="button">🔊 on</button>
+        <audio id="remote-voice" autoplay playsinline></audio>
+    </div>
+
+    <!-- ==========================================================
+         ৪. নতুন খেলার নিশ্চিতকরণ পপআপ
+         ========================================================== -->
+    <div id="confirm-overlay" class="overlay" hidden>
+        <div class="lobby-card">
+            <h2>নতুন খেলা শুরু করবেন?</h2>
+            <p class="conn-msg">চলতি খেলা বাতিল হয়ে দুজনেরই নতুন খেলা শুরু হবে।</p>
+            <div class="btn-row">
+                <button id="confirm-no-btn" class="ghost-btn" type="button">না</button>
+                <button id="confirm-yes-btn" class="restart-btn" type="button">হ্যাঁ, শুরু করুন</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================
+         ৫. বিজয়ী পপআপ: জয়ী গুটির নাম ঘোষণা + আবার খেলা
+         ========================================================== -->
+    <div id="win-overlay" class="overlay" hidden>
+        <div class="win-card">
+            <div class="win-icon">🏆</div>
+            <div id="win-piece" class="win-piece"></div>
+            <h2 id="win-title">অভিনন্দন!</h2>
+            <p id="win-message"></p>
+            <div class="btn-row">
+                <button id="win-lobby-btn" class="ghost-btn" type="button">home</button>
+                <button id="win-restart-btn" class="restart-btn" type="button">🔄 আবার খেলুন</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================
+         ৬. খেলার মঞ্চ
+            ওপরে বন্ধুর লেবেল, মাঝে বোর্ড, নিচে নিজের লেবেল।
+            বোর্ডের ভেতরের সব (রেখা, বিন্দু, গুটি) 16game.js আঁকবে।
+         ========================================================== -->
+    <main id="stage" class="stage">
+        <div id="label-top" class="side-label label-top" hidden>
+            <i class="dot"></i><span class="name"></span><b class="left"></b>
+        </div>
+
+        <svg id="board" class="board" viewBox="-45 -130 490 660" preserveAspectRatio="xMidYMid meet"></svg>
+
+        <div id="label-bottom" class="side-label label-bottom" hidden>
+            <i class="dot"></i><span class="name"></span><b class="left"></b>
+        </div>
+
+        <!-- পরপর ধরার সময় থামার বাটন (শুধু তখনই দেখা যাবে) -->
+        <button id="stop-btn" class="stop-btn" type="button" hidden></button>
+    </main>
+
+    <!-- ছোট নোটিফিকেশন -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <!-- ফুটার ক্রেডিট -->
+    <div class="footer-credit">© Since 2026 ❤️<br>powered by Adnan Sami</div>
+
+    <!-- স্ক্রিপ্টের ক্রম বদলাবেন না: game → connection → extras -->
+    <script src="16game.js"></script>
+    <script src="16connection.js"></script>
+    <script src="16extras.js"></script>
+</body>
+</html>

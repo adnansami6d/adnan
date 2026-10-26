@@ -1,0 +1,472 @@
+/* ==========================================================
+   Game Bazz - ষোলো গুটি (16home.css)
+   লুডুর নিয়ন থিমের ওপর তৈরি: গাঢ় নীল ব্যাকগ্রাউন্ড + নিয়ন সায়ান।
+
+   জাভাস্ক্রিপ্টের সাথে চুক্তি (16game.js এই ক্লাসগুলো ব্যবহার করবে):
+   - গুটির রং আসে inline `--c` ভ্যারিয়েবল থেকে (যেমন style="--c:#ff4d6d")
+   - .piece (g) > .shadow + .hop(g) > .rim + .core + .shine, এবং .ring
+   - .piece.mine / .opp / .movable / .selected / .landed / .captured
+   - বোর্ডে: .board-line, .board-dot, .hint-move, .hint-cap, .hint-over
+   ========================================================== */
+
+/* ---------- ০. ভ্যারিয়েবল ---------- */
+:root {
+    --H: 100vh;
+
+    --bg: #0b0f19;
+    --panel: rgba(15, 23, 42, 0.92);
+    --neon: #00f3ff;
+    --neon-soft: rgba(0, 243, 255, 0.4);
+    --neon-faint: rgba(0, 243, 255, 0.15);
+    --green: #00e676;
+    --red: #ff1744;
+    --yellow: #ffd600;
+    --orange: #ffab00;
+    --text-dim: rgba(255, 255, 255, 0.7);
+
+    --hud-h: 52px;
+    --foot-h: 44px;
+}
+@supports (height: 100dvh) {
+    :root { --H: 100dvh; }
+}
+
+[hidden] { display: none !important; }
+
+/* ---------- ১. মূল পেজ ---------- */
+* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+
+html, body {
+    margin: 0; padding: 0; width: 100vw; height: var(--H);
+    overflow: hidden; touch-action: manipulation; overscroll-behavior: none;
+    font-family: system-ui, -apple-system, 'Segoe UI', 'Noto Sans Bengali', Arial, sans-serif;
+    color: #fff;
+    background:
+        radial-gradient(ellipse at 50% 35%, rgba(0, 243, 255, 0.07), transparent 60%),
+        radial-gradient(ellipse at 50% 100%, rgba(0, 119, 255, 0.08), transparent 55%),
+        var(--bg);
+    user-select: none; -webkit-user-select: none;
+}
+body {
+    display: flex; justify-content: center; align-items: stretch;
+    /* ওপরে HUD + ব্যাজ, নিচে ফুটার */
+    padding-top: calc(env(safe-area-inset-top, 0px) + var(--hud-h) + 34px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--foot-h));
+    padding-left: 10px; padding-right: 10px;
+}
+
+/* ---------- ২. খেলার মঞ্চ ও বোর্ড ---------- */
+.stage {
+    position: relative; flex: 1; min-width: 0; min-height: 0;
+    width: 100%; max-width: 560px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+
+.board {
+    flex: 1 1 auto; min-height: 0; width: 100%;
+    border-radius: 18px;
+    background:
+        radial-gradient(ellipse at 50% 45%, rgba(0, 243, 255, 0.06), transparent 65%),
+        linear-gradient(180deg, #121a2e 0%, #0e1526 100%);
+    border: 1px solid rgba(0, 243, 255, 0.3);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55), 0 0 24px var(--neon-faint), inset 0 0 40px rgba(0, 0, 0, 0.35);
+    animation: boardIn 0.5s ease-out both;
+}
+@keyframes boardIn {
+    from { opacity: 0; transform: scale(0.97); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+/* রেখা ও বিন্দু */
+.board-line {
+    stroke: rgba(140, 200, 255, 0.26); stroke-width: 3; stroke-linecap: round;
+    fill: none;
+}
+.board-dot { fill: rgba(140, 220, 255, 0.55); }
+
+/* ---------- ৩. গুটি (আধুনিক চকচকে বিড) ----------
+   JS প্রতিটি গুটির g-তে style="--c:#রং; transform:translate(x px, y px)" বসাবে।
+   transform-এর transition থাকায় গুটি নিজে থেকেই গড়িয়ে নতুন ঘরে যাবে। */
+.piece {
+    transition: transform 0.28s cubic-bezier(0.34, 1.2, 0.5, 1);
+    --c-dark:  color-mix(in srgb, var(--c, #00f3ff) 55%, #000);
+    --c-light: color-mix(in srgb, var(--c, #00f3ff) 62%, #fff);
+}
+.piece.mine { cursor: pointer; }
+.piece.opp  { pointer-events: none; }
+
+.piece .shadow { fill: rgba(0, 0, 0, 0.45); transform-box: fill-box; transform-origin: center; }
+.piece .hop    { transform-box: fill-box; transform-origin: center; }
+
+.piece .rim {
+    fill: var(--c-dark);
+    stroke: rgba(255, 255, 255, 0.55); stroke-width: 1.5;
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--c, #00f3ff) 70%, transparent));
+}
+.piece .core { fill: var(--c); }
+.piece .shine { fill: rgba(255, 255, 255, 0.55); }
+.piece .core-glow { fill: var(--c-light); opacity: 0.55; }
+
+/* নির্বাচিত গুটির ঘূর্ণায়মান আংটি */
+.piece .ring {
+    fill: none; stroke: var(--neon); stroke-width: 2.5; stroke-dasharray: 6 6;
+    opacity: 0; transform-box: fill-box; transform-origin: center;
+}
+.piece.selected .ring { opacity: 1; animation: spinRing 3s linear infinite; }
+@keyframes spinRing { to { transform: rotate(360deg); } }
+
+/* যার চাল দেওয়ার উপযুক্ত গুটি — হালকা লাফায় */
+.piece.movable .hop    { animation: hop 0.8s ease-in-out infinite; }
+.piece.movable .shadow { animation: hopShadow 0.8s ease-in-out infinite; }
+@keyframes hop {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-5px); }
+}
+@keyframes hopShadow {
+    0%, 100% { transform: scale(1);    opacity: 1; }
+    50%      { transform: scale(0.82); opacity: 0.6; }
+}
+/* একেকটা গুটি একটু আলাদা সময়ে লাফাবে, যাতে যান্ত্রিক না লাগে */
+.piece.movable:nth-child(3n)   .hop,
+.piece.movable:nth-child(3n)   .shadow { animation-delay: -0.25s; }
+.piece.movable:nth-child(3n+1) .hop,
+.piece.movable:nth-child(3n+1) .shadow { animation-delay: -0.5s; }
+
+/* ঘরে বসার মুহূর্তে হালকা চাপ (squash) */
+.piece.landed .hop { animation: land 0.32s ease-out; }
+@keyframes land {
+    0%   { transform: scale(1.18, 0.82); }
+    60%  { transform: scale(0.94, 1.08); }
+    100% { transform: scale(1, 1); }
+}
+
+/* ধরা পড়লে মিলিয়ে যায় */
+.piece.captured { pointer-events: none; }
+.piece.captured .hop    { animation: poof 0.4s ease-in forwards; }
+.piece.captured .shadow { animation: poof 0.3s ease-in forwards; }
+@keyframes poof {
+    0%   { transform: scale(1);   opacity: 1; }
+    40%  { transform: scale(1.3); opacity: 0.9; }
+    100% { transform: scale(0);   opacity: 0; }
+}
+
+/* ---------- ৪. চলার ইঙ্গিত ---------- */
+.hint-move, .hint-cap { cursor: pointer; transform-box: fill-box; transform-origin: center; }
+.hint-move {
+    fill: rgba(0, 230, 118, 0.18); stroke: var(--green); stroke-width: 2.5;
+    animation: hintPulse 1.2s ease-in-out infinite;
+}
+.hint-cap {
+    fill: rgba(255, 171, 0, 0.22); stroke: var(--orange); stroke-width: 2.5;
+    animation: hintPulse 1.2s ease-in-out infinite;
+}
+@keyframes hintPulse {
+    0%, 100% { transform: scale(1);    opacity: 1; }
+    50%      { transform: scale(1.12); opacity: 0.7; }
+}
+/* যে গুটি ডিঙানো হবে তার চারপাশের ড্যাশ-বৃত্ত */
+.hint-over {
+    fill: none; stroke: var(--orange); stroke-width: 2; stroke-dasharray: 4 5;
+    pointer-events: none; transform-box: fill-box; transform-origin: center;
+    animation: spinRing 6s linear infinite;
+}
+
+/* ---------- ৫. উপরের স্ট্যাটাস বার (HUD) ---------- */
+.hud {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10000;
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    padding: calc(env(safe-area-inset-top, 0px) + 8px) 10px 0;
+    pointer-events: none;
+}
+.hud > * { pointer-events: auto; }
+.hud-left  { display: flex; align-items: center; min-width: 0; }
+.hud-right { display: flex; align-items: center; gap: 6px; min-width: 0; }
+
+.gamebazz-logo-badge {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(0, 119, 255, 0.4);
+    padding: 6px 14px; border-radius: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 10px rgba(0, 119, 255, 0.3);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.gamebazz-logo-badge .logo-icon { font-size: 16px; }
+.gamebazz-logo-badge .logo-text {
+    font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 800;
+    background: linear-gradient(135deg, #ffffff 30%, #0077ff 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; letter-spacing: 0.5px;
+}
+
+/* কানেকশন ডট */
+.conn-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.conn-on   { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.conn-off  { background: var(--red);   box-shadow: 0 0 8px var(--red); }
+.conn-wait { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.room-title {
+    max-width: 90px; font-size: 12px; font-weight: 600; color: var(--text-dim);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.mini-btn {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(15, 23, 42, 0.85);
+    color: #fff; font-family: inherit; font-size: 12px; font-weight: 700;
+    padding: 6px 10px; border-radius: 16px; cursor: pointer;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    white-space: nowrap; transition: transform 0.12s ease, background 0.2s ease;
+}
+.mini-btn:active { transform: scale(0.94); }
+.mini-btn-neon { background: var(--neon); color: #000; border-color: var(--neon); }
+
+/* কার চাল চলছে */
+.turn-badge {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    top: calc(env(safe-area-inset-top, 0px) + var(--hud-h) + 2px);
+    z-index: 9500;
+    font-size: 13px; font-weight: 700; white-space: nowrap;
+    padding: 5px 16px; border-radius: 20px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-dim);
+    pointer-events: none;
+    transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+.turn-badge.turn-mine {
+    color: #00210f; background: var(--green); border-color: var(--green);
+    box-shadow: 0 0 14px rgba(0, 230, 118, 0.6);
+    animation: pulse 1.4s ease-in-out infinite;
+}
+.turn-badge.turn-opp { color: #fff; border-color: var(--neon-soft); }
+
+/* মেসেঞ্জার/ফেসবুক ব্রাউজারের সতর্কবার */
+.inapp-banner {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10001;
+    display: flex; align-items: center; gap: 8px;
+    padding: calc(env(safe-area-inset-top, 0px) + 8px) 10px 8px;
+    background: rgba(70, 52, 0, 0.96);
+    border-bottom: 1px solid rgba(255, 214, 0, 0.6);
+    color: #fff; font-size: 12px; line-height: 1.4;
+}
+.inapp-text { flex: 1; min-width: 0; }
+
+/* ---------- ৬. দুই পাশের লেবেল ("আপনি" / "বন্ধু") ----------
+   JS প্রতিটি লেবেলে style="--c:#রং" দেবে, আর যার চাল তাতে .active বসাবে। */
+.side-label {
+    flex: 0 0 auto;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 5px 14px; border-radius: 20px;
+    font-size: 13px; font-weight: 700; color: var(--text-dim); white-space: nowrap;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    transition: all 0.25s ease;
+}
+.side-label .dot {
+    width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+    background: var(--c, #888);
+    box-shadow: 0 0 8px var(--c, transparent), inset -1px -1px 2px rgba(0, 0, 0, 0.4), inset 1px 1px 2px rgba(255, 255, 255, 0.5);
+}
+.side-label .left {
+    min-width: 22px; padding: 1px 7px; border-radius: 10px; text-align: center;
+    font-size: 12px; color: #fff; background: rgba(255, 255, 255, 0.1);
+}
+.side-label.active {
+    color: #fff;
+    border-color: var(--c, var(--neon));
+    box-shadow: 0 0 14px color-mix(in srgb, var(--c, #00f3ff) 55%, transparent);
+    animation: labelGlow 1.6s ease-in-out infinite;
+}
+@keyframes labelGlow {
+    0%, 100% { box-shadow: 0 0 8px color-mix(in srgb, var(--c, #00f3ff) 40%, transparent); }
+    50%      { box-shadow: 0 0 18px color-mix(in srgb, var(--c, #00f3ff) 75%, transparent); }
+}
+
+/* পরপর ধরার সময় থামার বাটন */
+.stop-btn {
+    position: absolute; right: 0; bottom: 0;
+    font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+    padding: 8px 16px; border-radius: 20px; border: none;
+    color: #000; background: var(--orange);
+    box-shadow: 0 0 14px rgba(255, 171, 0, 0.5);
+    animation: stopIn 0.2s ease-out;
+}
+.stop-btn:active { transform: scale(0.95); }
+@keyframes stopIn {
+    from { opacity: 0; transform: translateY(6px) scale(0.92); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ---------- ৭. পপআপ ---------- */
+.overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(5, 8, 15, 0.85);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 30000;
+    backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+}
+.lobby-card, .win-card {
+    position: relative; overflow: hidden;
+    background: var(--panel); padding: 26px 24px; border-radius: 20px; text-align: center;
+    border: 1px solid rgba(0, 243, 255, 0.3); color: #fff; width: 90%; max-width: 350px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 24px var(--neon-faint);
+    animation: popIn 0.25s ease-out;
+}
+@keyframes popIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.94); }
+    to   { opacity: 1; transform: none; }
+}
+.lobby-card h2, .win-card h2 { margin: 6px 0 10px; font-size: 20px; color: var(--neon); }
+.conn-msg { margin: 6px 0 14px; font-size: 14px; line-height: 1.55; color: var(--text-dim); }
+.conn-msg.first { margin-top: 0; margin-bottom: 8px; }
+.lobby-error { color: #ff8a9b; margin-bottom: 0; }
+.divider { margin: 18px 0 14px; border-top: 1px solid rgba(255, 255, 255, 0.14); }
+
+/* পিন ইনপুট ও বড় পিন */
+.pin-input {
+    display: block; width: 70%; margin: 8px auto 4px; padding: 10px;
+    text-align: center; font-family: 'Orbitron', sans-serif; font-size: 18px; letter-spacing: 6px;
+    background: rgba(10, 15, 25, 0.8); color: #fff;
+    border: 1px solid rgba(0, 243, 255, 0.4); border-radius: 10px; outline: none;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.pin-input::placeholder { font-family: system-ui, 'Noto Sans Bengali', sans-serif; font-size: 14px; letter-spacing: 0; color: rgba(255, 255, 255, 0.35); }
+.pin-input:focus { border-color: var(--neon); box-shadow: 0 0 12px var(--neon-soft); }
+.pin-display {
+    font-family: 'Orbitron', sans-serif; font-size: 40px; font-weight: 800; letter-spacing: 8px;
+    color: var(--neon); text-shadow: 0 0 14px var(--neon-soft); margin: 6px 0 10px;
+    padding-left: 8px;
+}
+
+/* বাটন */
+.restart-btn, .ghost-btn { font-family: inherit; cursor: pointer; font-weight: 700; font-size: 14px; border-radius: 10px; transition: transform 0.12s ease, box-shadow 0.2s ease; }
+.restart-btn {
+    padding: 12px 15px; background: linear-gradient(135deg, #00f3ff, #00b8ff); color: #00131a; border: none;
+    box-shadow: 0 0 14px var(--neon-soft);
+}
+.ghost-btn {
+    padding: 12px 15px; background: rgba(255, 255, 255, 0.06); color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.restart-btn:active, .ghost-btn:active { transform: scale(0.96); }
+.restart-btn:disabled, .ghost-btn:disabled { opacity: 0.5; cursor: default; }
+.lobby-card .restart-btn, .lobby-card .ghost-btn { display: block; width: 100%; margin-top: 10px; }
+.btn-row { display: flex; gap: 10px; margin-top: 14px; }
+.lobby-card .btn-row > button, .win-card .btn-row > button { flex: 1; width: auto; margin-top: 0; }
+
+/* লোডিং স্পিনার */
+.spinner {
+    width: 38px; height: 38px; margin: 0 auto 12px;
+    border: 3px solid var(--neon-faint); border-top-color: var(--neon);
+    border-radius: 50%; animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- ৮. বিজয় ঘোষণা ----------
+   #win-piece-এ JS style="--c:#রং" দেবে: জয়ী গুটির রঙের বড় বিড দেখাবে। */
+.win-card { padding-top: 30px; border-color: rgba(255, 214, 0, 0.45); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 214, 0, 0.18); }
+.win-card::before {   /* ওপর থেকে নামা সোনালি আলো */
+    content: ''; position: absolute; top: -60px; left: 50%; width: 260px; height: 200px; margin-left: -130px;
+    background: radial-gradient(ellipse at 50% 0%, rgba(255, 214, 0, 0.28), transparent 70%);
+    pointer-events: none;
+}
+.win-card::after {    /* ঝরে পড়া কনফেটি */
+    content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0.9;
+    background-image:
+        radial-gradient(circle, #ff4d6d 0 3px, transparent 4px),
+        radial-gradient(circle, #ffd600 0 3px, transparent 4px),
+        radial-gradient(circle, #00e5ff 0 3px, transparent 4px),
+        radial-gradient(circle, #7cff6b 0 3px, transparent 4px),
+        radial-gradient(circle, #c77dff 0 3px, transparent 4px);
+    background-size: 90px 120px, 130px 150px, 110px 100px, 150px 130px, 100px 140px;
+    background-position: 10px 0, 50px 40px, 20px 80px, 70px 20px, 90px 60px;
+    animation: confetti 3.5s linear infinite;
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+            mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%);
+}
+@keyframes confetti {
+    to { background-position: 10px 120px, 50px 190px, 20px 180px, 70px 150px, 90px 200px; }
+}
+.win-card > * { position: relative; z-index: 1; }
+.win-icon { font-size: 44px; line-height: 1.1; animation: trophy 1.6s ease-in-out infinite; }
+@keyframes trophy {
+    0%, 100% { transform: translateY(0) rotate(-4deg); }
+    50%      { transform: translateY(-5px) rotate(4deg); }
+}
+.win-piece {
+    position: relative; width: 64px; height: 64px; margin: 10px auto 12px; border-radius: 50%;
+    background:
+        radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.85) 0 9%, transparent 22%),
+        radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--c, #00f3ff) 70%, #fff) 0%, var(--c, #00f3ff) 55%, color-mix(in srgb, var(--c, #00f3ff) 55%, #000) 100%);
+    box-shadow: 0 0 28px color-mix(in srgb, var(--c, #00f3ff) 80%, transparent), inset -4px -6px 10px rgba(0, 0, 0, 0.35);
+    animation: beadPop 0.7s cubic-bezier(0.3, 1.5, 0.5, 1) both, beadGlow 1.8s ease-in-out 0.7s infinite;
+}
+.win-piece::after {   /* বিডের চারপাশে ঘূর্ণায়মান আংটি */
+    content: ''; position: absolute; inset: -9px; border-radius: 50%;
+    border: 2px dashed color-mix(in srgb, var(--c, #00f3ff) 85%, #fff);
+    animation: spin 5s linear infinite;
+}
+@keyframes beadPop {
+    from { transform: scale(0) rotate(-90deg); opacity: 0; }
+    to   { transform: scale(1) rotate(0); opacity: 1; }
+}
+@keyframes beadGlow {
+    0%, 100% { box-shadow: 0 0 20px color-mix(in srgb, var(--c, #00f3ff) 60%, transparent), inset -4px -6px 10px rgba(0, 0, 0, 0.35); }
+    50%      { box-shadow: 0 0 38px color-mix(in srgb, var(--c, #00f3ff) 95%, transparent), inset -4px -6px 10px rgba(0, 0, 0, 0.35); }
+}
+.win-card h2 { font-size: 22px; color: var(--yellow); text-shadow: 0 0 14px rgba(255, 214, 0, 0.35); animation: titleIn 0.5s ease-out 0.25s both; }
+#win-message { margin: 4px 0 4px; font-size: 16px; line-height: 1.5; animation: titleIn 0.5s ease-out 0.4s both; }
+@keyframes titleIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ---------- ৯. ভয়েস, টোস্ট, ফুটার ---------- */
+.voice-widget {
+    position: fixed; left: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); z-index: 10000;
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(15, 23, 42, 0.9); padding: 4px 8px 4px 12px; border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; font-size: 12px;
+}
+
+.toast-container {
+    position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 60px); transform: translateX(-50%);
+    z-index: 40000; display: flex; flex-direction: column; gap: 8px;
+    width: calc(100% - 32px); max-width: 380px; pointer-events: none;
+}
+.toast {
+    padding: 10px 14px; font-size: 14px; text-align: center; color: #fff;
+    background: rgba(15, 23, 42, 0.95); border: 1px solid var(--neon-soft);
+    border-radius: 12px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    opacity: 0; transform: translateY(10px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast-success { border-color: rgba(0, 230, 118, 0.6); }
+.toast-error   { border-color: rgba(255, 23, 68, 0.6); }
+
+.footer-credit {
+    position: fixed; bottom: calc(env(safe-area-inset-bottom, 0px) + 8px); right: 15px; z-index: 10000;
+    font-family: 'Orbitron', Arial, sans-serif; font-size: 11px; font-weight: 500;
+    line-height: 1.4; text-align: right;
+    color: rgba(255, 255, 255, 0.7); letter-spacing: 0.5px;
+    pointer-events: none; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- ১০. ছোট স্ক্রিন ও কম অ্যানিমেশনের পছন্দ ---------- */
+@media (max-width: 480px) {
+    .gamebazz-logo-badge { padding: 4px 10px; }
+    .gamebazz-logo-badge .logo-text { font-size: 12px; }
+}
+@media (max-width: 400px) {
+    .room-title { display: none; }
+    .mini-btn { padding: 5px 8px; }
+}
+@media (max-height: 640px) {
+    :root { --hud-h: 46px; --foot-h: 38px; }
+    .footer-credit { font-size: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}

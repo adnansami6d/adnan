@@ -1,0 +1,519 @@
+/* ==========================================================
+   Ludo — home.css  (ক্লিন সাদা প্রিমিয়াম থিম)
+   ========================================================== */
+
+/* ---------- ০. ভ্যারিয়েবল ---------- */
+:root {
+    --H: 100vh;
+    --dice: 60px;
+    --dice-gap: 6px;
+    /* বোর্ড: ফোনে প্রায় পুরো প্রস্থ, ওপরে-নিচে ডাইস ও বারের জায়গা রেখে */
+    --board: min(calc(100vw - 16px), calc(var(--H) - 2 * (var(--dice) + var(--dice-gap)) - 120px), 640px);
+    --u: calc(var(--board) / 15);
+
+    --ink: #111111;
+    --line: rgba(0, 0, 0, 0.06);
+
+    --red:    #E04A53;  --red-lane:    #F5ADB2;  --red-base:    #FBDDE0;  --red-ring:    #C42732;
+    --green:  #2FB36D;  --green-lane:  #A0DDBC;  --green-base:  #D5F1E3;  --green-ring:  #13894B;
+    --yellow: #F5BE1B;  --yellow-lane: #FBDB7C;  --yellow-base: #FEF0C6;  --yellow-ring: #D39500;
+    --blue:   #3A86F0;  --blue-lane:   #A1C5F8;  --blue-base:   #D6E6FC;  --blue-ring:   #1F5BC4;
+    --grid: #1b1b1b;
+}
+@supports (height: 100dvh) {
+    :root { --H: 100dvh; }
+}
+
+[hidden] { display: none !important; }
+
+/* ---------- ১. মূল পেজ ---------- */
+* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+
+html, body {
+    margin: 0; padding: 0; width: 100vw; height: var(--H);
+    overflow: hidden; touch-action: none;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+    color: var(--ink);
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;
+    user-select: none; -webkit-user-select: none;
+    background:
+        radial-gradient(120% 70% at 15% 0%, #ffffff 0%, rgba(255,255,255,0) 60%),
+        radial-gradient(90% 60% at 100% 55%, #D5D8DE 0%, rgba(213,216,222,0) 60%),
+        #F5F6F8;
+}
+body { display: flex; justify-content: center; align-items: center; }
+
+/* ---------- ২. বোর্ড ---------- */
+.grid-container {
+    display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr);
+    width: var(--board); height: var(--board);
+    gap: 0; background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 0 0 1.5px var(--grid), 0 18px 40px rgba(0, 0, 0, 0.12);
+    position: relative;
+}
+.cell {
+    background: #fff; display: flex; align-items: center; justify-content: center;
+    aspect-ratio: 1 / 1; position: relative;
+    box-shadow: inset 0 0 0 0.5px var(--grid);
+}
+
+/* বোর্ডের চার কোণা গোল */
+#cell-211 { border-top-left-radius: 14px; }
+#cell-225 { border-top-right-radius: 14px; }
+#cell-1   { border-bottom-left-radius: 14px; }
+#cell-15  { border-bottom-right-radius: 14px; }
+
+/* বেসের বাইরের ফ্রেম ঘর (নরম ভরাট, রেখা নেই) */
+/* লাল */
+#cell-1, #cell-2, #cell-3, #cell-4, #cell-5, #cell-6, #cell-16, #cell-21, #cell-31, #cell-36,
+#cell-46, #cell-51, #cell-61, #cell-66, #cell-76, #cell-77, #cell-78, #cell-79, #cell-80, #cell-81 {
+    background: var(--red-base); box-shadow: none;
+}
+/* সবুজ */
+#cell-10, #cell-11, #cell-12, #cell-13, #cell-14, #cell-15, #cell-25, #cell-30, #cell-40, #cell-45,
+#cell-55, #cell-60, #cell-70, #cell-75, #cell-85, #cell-86, #cell-87, #cell-88, #cell-89, #cell-90 {
+    background: var(--green-base); box-shadow: none;
+}
+/* হলুদ */
+#cell-145, #cell-146, #cell-147, #cell-148, #cell-149, #cell-150, #cell-160, #cell-165, #cell-175, #cell-180,
+#cell-190, #cell-195, #cell-205, #cell-210, #cell-220, #cell-221, #cell-222, #cell-223, #cell-224, #cell-225 {
+    background: var(--yellow-base); box-shadow: none;
+}
+/* নীল */
+#cell-136, #cell-137, #cell-138, #cell-139, #cell-140, #cell-141, #cell-151, #cell-156, #cell-166, #cell-171,
+#cell-181, #cell-186, #cell-196, #cell-201, #cell-211, #cell-212, #cell-213, #cell-214, #cell-215, #cell-216 {
+    background: var(--blue-base); box-shadow: none;
+}
+
+/* হোম-লেন */
+#cell-23, #cell-38, #cell-53, #cell-68, #cell-83 { background: var(--red-lane); }
+#cell-115, #cell-116, #cell-117, #cell-118, #cell-119 { background: var(--green-lane); }
+#cell-143, #cell-158, #cell-173, #cell-188, #cell-203 { background: var(--yellow-lane); }
+#cell-107, #cell-108, #cell-109, #cell-110, #cell-111 { background: var(--blue-lane); }
+
+/* স্টার্ট ঘর: গাঢ় ভরাট */
+#cell-22  { background: var(--red); }
+#cell-104 { background: var(--green); }
+#cell-204 { background: var(--yellow); }
+#cell-122 { background: var(--blue); }
+
+/* ৮টা নিরাপদ ঘরেই তারা */
+#cell-22::after, #cell-93::after, #cell-122::after, #cell-187::after,
+#cell-204::after, #cell-133::after, #cell-104::after, #cell-39::after {
+    content: ''; position: absolute; left: 18%; top: 18%; width: 64%; height: 64%;
+    background: #1b1b1b; pointer-events: none; z-index: 1;
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+#cell-22::after, #cell-122::after, #cell-204::after, #cell-104::after { background: #fff; }
+
+/* ---------- ৩. মাঝের পাকা ঘর (ত্রিভুজ) ---------- */
+#center-home { grid-column: 7 / 10; grid-row: 7 / 10; position: relative; width: 100%; height: 100%; z-index: 1; background: #fff; box-shadow: 0 0 0 1px var(--grid); }
+/* ত্রিভুজের মাঝে সরু কালো কোণাকুণি রেখা */
+#center-home::after {
+    content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background:
+        linear-gradient(to top right, transparent calc(50% - 0.6px), var(--grid) calc(50% - 0.6px), var(--grid) calc(50% + 0.6px), transparent calc(50% + 0.6px)),
+        linear-gradient(to bottom right, transparent calc(50% - 0.6px), var(--grid) calc(50% - 0.6px), var(--grid) calc(50% + 0.6px), transparent calc(50% + 0.6px));
+}
+
+.triangle { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+.triangle::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+#home-top::before    { background: var(--yellow); clip-path: polygon(0 0, 100% 0, 50% 50%); }
+#home-right::before  { background: var(--green);  clip-path: polygon(100% 0, 100% 100%, 50% 50%); }
+#home-bottom::before { background: var(--red);    clip-path: polygon(0 100%, 100% 100%, 50% 50%); }
+#home-left::before   { background: var(--blue);   clip-path: polygon(0 0, 0 100%, 50% 50%); }
+
+/* ত্রিভুজের পৌঁছানো গুটি: ছোট পনে, ক্লিক বন্ধ */
+.triangle > .token {
+    position: absolute; margin: 0; height: 25%;
+    z-index: 10 !important; pointer-events: none !important;
+}
+/* নিচের (লাল): ডগায় ১টি, নিচের সারিতে ৩টি */
+#home-bottom > .token[data-slot="0"] { left: 40%; top: 50%; }
+#home-bottom > .token[data-slot="1"] { left: 20%; top: 73%; }
+#home-bottom > .token[data-slot="2"] { left: 40%; top: 73%; }
+#home-bottom > .token[data-slot="3"] { left: 60%; top: 73%; }
+/* উপরের (হলুদ): উল্টো */
+#home-top > .token[data-slot="0"] { left: 40%; top: 25%; }
+#home-top > .token[data-slot="1"] { left: 20%; top: 2%; }
+#home-top > .token[data-slot="2"] { left: 40%; top: 2%; }
+#home-top > .token[data-slot="3"] { left: 60%; top: 2%; }
+/* ডান/বাম (সাজসজ্জা) */
+#home-left > .token, #home-right > .token { left: 40%; top: 38%; }
+
+/* ---------- ৪. বেস বক্স ---------- */
+.home-box {
+    display: flex; justify-content: center; align-items: center;
+    width: 100%; height: 100%; padding: calc(var(--u) * 0.3);
+    position: relative;
+}
+/* পুরো ৬×৬ বেসের চারপাশে একটাই সরু কালো ফ্রেম */
+.home-box::after {
+    content: ''; position: absolute; inset: calc(var(--u) * -1); z-index: 2;
+    border: 1.5px solid var(--grid); border-radius: var(--br, 0); pointer-events: none;
+}
+#bottom-left-home  { grid-column: 2 / 6;   grid-row: 11 / 15; background: var(--red-base);    --ring: var(--red-ring);    --br: 0 0 0 14px; }
+#bottom-right-home { grid-column: 11 / 15; grid-row: 11 / 15; background: var(--green-base);  --ring: var(--green-ring);  --br: 0 0 14px 0; }
+#top-right-home    { grid-column: 11 / 15; grid-row: 2 / 6;   background: var(--yellow-base); --ring: var(--yellow-ring); --br: 0 14px 0 0; }
+#top-left-home     { grid-column: 2 / 6;   grid-row: 2 / 6;   background: var(--blue-base);   --ring: var(--blue-ring);   --br: 14px 0 0 0; }
+
+.home-inner-box {
+    --hr: calc(var(--u) * 0.6);
+    width: 100%; height: 100%;
+    display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr);
+    gap: calc(var(--u) * 0.35); padding: calc(var(--u) * 0.35);
+    background: none; border-radius: 0; box-shadow: none;
+    background-image:
+        radial-gradient(circle at 27.6% 27.6%, #fff 0, #fff calc(var(--hr) - 1.5px), var(--ring) calc(var(--hr) - 1.5px), var(--ring) var(--hr), transparent calc(var(--hr) + 0.5px)),
+        radial-gradient(circle at 72.4% 27.6%, #fff 0, #fff calc(var(--hr) - 1.5px), var(--ring) calc(var(--hr) - 1.5px), var(--ring) var(--hr), transparent calc(var(--hr) + 0.5px)),
+        radial-gradient(circle at 27.6% 72.4%, #fff 0, #fff calc(var(--hr) - 1.5px), var(--ring) calc(var(--hr) - 1.5px), var(--ring) var(--hr), transparent calc(var(--hr) + 0.5px)),
+        radial-gradient(circle at 72.4% 72.4%, #fff 0, #fff calc(var(--hr) - 1.5px), var(--ring) calc(var(--hr) - 1.5px), var(--ring) var(--hr), transparent calc(var(--hr) + 0.5px));
+}
+/* গর্তের মাঝখানে গুটি (গর্তের প্রায় ৭০–৭৫%) */
+.home-inner-box > .token { height: 84%; margin: auto; }
+
+/* ---------- ৫. গুটি (পনের আকার, SVG) ---------- */
+.token {
+    position: relative; height: 96%; aspect-ratio: 4 / 5; width: auto; margin: auto;
+    background-repeat: no-repeat; background-position: center bottom; background-size: contain;
+    transition: transform 0.2s ease;
+    z-index: 5; pointer-events: auto !important; cursor: pointer;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
+}
+
+.red-token {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 50'%3E%3Cdefs%3E%3ClinearGradient id='b' x1='0' x2='1' y1='0' y2='0'%3E%3Cstop offset='0' stop-color='%236E0E16'/%3E%3Cstop offset='.34' stop-color='%23EE6D75'/%3E%3Cstop offset='.62' stop-color='%23C42732'/%3E%3Cstop offset='1' stop-color='%236E0E16'/%3E%3C/linearGradient%3E%3CradialGradient id='h' cx='.34' cy='.28' r='.8'%3E%3Cstop offset='0' stop-color='%23EE6D75'/%3E%3Cstop offset='.5' stop-color='%23C42732'/%3E%3Cstop offset='1' stop-color='%236E0E16'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cellipse cx='20' cy='45.6' rx='14.5' ry='3' fill='%23000' opacity='.25'/%3E%3Cpath d='M6.5 41.5C6.5 37.2 13 36.8 15.4 33C17.2 29.6 17.6 25 17.8 21H22.2C22.4 25 22.8 29.6 24.6 33C27 36.8 33.5 37.2 33.5 41.5C33.5 44.8 27.5 46.4 20 46.4C12.5 46.4 6.5 44.8 6.5 41.5Z' fill='url(%23b)' stroke='%234A0509' stroke-width='1' stroke-linejoin='round'/%3E%3Cellipse cx='20' cy='41' rx='12.6' ry='3.1' fill='none' stroke='%23fff' stroke-opacity='.28' stroke-width='.8'/%3E%3Cellipse cx='20' cy='21.6' rx='7.6' ry='2.7' fill='url(%23b)' stroke='%234A0509' stroke-width='.9'/%3E%3Cellipse cx='20' cy='21' rx='6' ry='1.2' fill='%23fff' fill-opacity='.22'/%3E%3Ccircle cx='20' cy='12' r='9' fill='url(%23h)' stroke='%234A0509' stroke-width='1'/%3E%3Cellipse cx='16.3' cy='8.4' rx='3.2' ry='2' fill='%23fff' fill-opacity='.6' transform='rotate(-32 16.3 8.4)'/%3E%3C/svg%3E");
+}
+.green-token {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 50'%3E%3Cdefs%3E%3ClinearGradient id='b' x1='0' x2='1' y1='0' y2='0'%3E%3Cstop offset='0' stop-color='%2308452A'/%3E%3Cstop offset='.34' stop-color='%2346C583'/%3E%3Cstop offset='.62' stop-color='%2313894B'/%3E%3Cstop offset='1' stop-color='%2308452A'/%3E%3C/linearGradient%3E%3CradialGradient id='h' cx='.34' cy='.28' r='.8'%3E%3Cstop offset='0' stop-color='%2346C583'/%3E%3Cstop offset='.5' stop-color='%2313894B'/%3E%3Cstop offset='1' stop-color='%2308452A'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cellipse cx='20' cy='45.6' rx='14.5' ry='3' fill='%23000' opacity='.25'/%3E%3Cpath d='M6.5 41.5C6.5 37.2 13 36.8 15.4 33C17.2 29.6 17.6 25 17.8 21H22.2C22.4 25 22.8 29.6 24.6 33C27 36.8 33.5 37.2 33.5 41.5C33.5 44.8 27.5 46.4 20 46.4C12.5 46.4 6.5 44.8 6.5 41.5Z' fill='url(%23b)' stroke='%23042B19' stroke-width='1' stroke-linejoin='round'/%3E%3Cellipse cx='20' cy='41' rx='12.6' ry='3.1' fill='none' stroke='%23fff' stroke-opacity='.28' stroke-width='.8'/%3E%3Cellipse cx='20' cy='21.6' rx='7.6' ry='2.7' fill='url(%23b)' stroke='%23042B19' stroke-width='.9'/%3E%3Cellipse cx='20' cy='21' rx='6' ry='1.2' fill='%23fff' fill-opacity='.22'/%3E%3Ccircle cx='20' cy='12' r='9' fill='url(%23h)' stroke='%23042B19' stroke-width='1'/%3E%3Cellipse cx='16.3' cy='8.4' rx='3.2' ry='2' fill='%23fff' fill-opacity='.6' transform='rotate(-32 16.3 8.4)'/%3E%3C/svg%3E");
+}
+.yellow-token {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 50'%3E%3Cdefs%3E%3ClinearGradient id='b' x1='0' x2='1' y1='0' y2='0'%3E%3Cstop offset='0' stop-color='%236B4700'/%3E%3Cstop offset='.34' stop-color='%23F6C640'/%3E%3Cstop offset='.62' stop-color='%23D39500'/%3E%3Cstop offset='1' stop-color='%236B4700'/%3E%3C/linearGradient%3E%3CradialGradient id='h' cx='.34' cy='.28' r='.8'%3E%3Cstop offset='0' stop-color='%23F6C640'/%3E%3Cstop offset='.5' stop-color='%23D39500'/%3E%3Cstop offset='1' stop-color='%236B4700'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cellipse cx='20' cy='45.6' rx='14.5' ry='3' fill='%23000' opacity='.25'/%3E%3Cpath d='M6.5 41.5C6.5 37.2 13 36.8 15.4 33C17.2 29.6 17.6 25 17.8 21H22.2C22.4 25 22.8 29.6 24.6 33C27 36.8 33.5 37.2 33.5 41.5C33.5 44.8 27.5 46.4 20 46.4C12.5 46.4 6.5 44.8 6.5 41.5Z' fill='url(%23b)' stroke='%234A3000' stroke-width='1' stroke-linejoin='round'/%3E%3Cellipse cx='20' cy='41' rx='12.6' ry='3.1' fill='none' stroke='%23fff' stroke-opacity='.28' stroke-width='.8'/%3E%3Cellipse cx='20' cy='21.6' rx='7.6' ry='2.7' fill='url(%23b)' stroke='%234A3000' stroke-width='.9'/%3E%3Cellipse cx='20' cy='21' rx='6' ry='1.2' fill='%23fff' fill-opacity='.22'/%3E%3Ccircle cx='20' cy='12' r='9' fill='url(%23h)' stroke='%234A3000' stroke-width='1'/%3E%3Cellipse cx='16.3' cy='8.4' rx='3.2' ry='2' fill='%23fff' fill-opacity='.6' transform='rotate(-32 16.3 8.4)'/%3E%3C/svg%3E");
+}
+.blue-token {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 50'%3E%3Cdefs%3E%3ClinearGradient id='b' x1='0' x2='1' y1='0' y2='0'%3E%3Cstop offset='0' stop-color='%230B2A6B'/%3E%3Cstop offset='.34' stop-color='%235390EE'/%3E%3Cstop offset='.62' stop-color='%231F5BC4'/%3E%3Cstop offset='1' stop-color='%230B2A6B'/%3E%3C/linearGradient%3E%3CradialGradient id='h' cx='.34' cy='.28' r='.8'%3E%3Cstop offset='0' stop-color='%235390EE'/%3E%3Cstop offset='.5' stop-color='%231F5BC4'/%3E%3Cstop offset='1' stop-color='%230B2A6B'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cellipse cx='20' cy='45.6' rx='14.5' ry='3' fill='%23000' opacity='.25'/%3E%3Cpath d='M6.5 41.5C6.5 37.2 13 36.8 15.4 33C17.2 29.6 17.6 25 17.8 21H22.2C22.4 25 22.8 29.6 24.6 33C27 36.8 33.5 37.2 33.5 41.5C33.5 44.8 27.5 46.4 20 46.4C12.5 46.4 6.5 44.8 6.5 41.5Z' fill='url(%23b)' stroke='%23061A47' stroke-width='1' stroke-linejoin='round'/%3E%3Cellipse cx='20' cy='41' rx='12.6' ry='3.1' fill='none' stroke='%23fff' stroke-opacity='.28' stroke-width='.8'/%3E%3Cellipse cx='20' cy='21.6' rx='7.6' ry='2.7' fill='url(%23b)' stroke='%23061A47' stroke-width='.9'/%3E%3Cellipse cx='20' cy='21' rx='6' ry='1.2' fill='%23fff' fill-opacity='.22'/%3E%3Ccircle cx='20' cy='12' r='9' fill='url(%23h)' stroke='%23061A47' stroke-width='1'/%3E%3Cellipse cx='16.3' cy='8.4' rx='3.2' ry='2' fill='%23fff' fill-opacity='.6' transform='rotate(-32 16.3 8.4)'/%3E%3C/svg%3E");
+}
+
+/* চালার যোগ্য গুটি: বড় ট্যাপ-এলাকা + নিচে নরম গ্লো (bounce JS দেয়) */
+.token.active-turn::before {
+    content: ''; position: absolute; top: -20%; bottom: -10%; left: -35%; right: -35%;
+}
+.token.active-turn::after {
+    content: ''; position: absolute; left: 50%; bottom: -6%;
+    width: 130%; height: 32%; transform: translateX(-50%);
+    border-radius: 50%; pointer-events: none; z-index: -1;
+    background: radial-gradient(ellipse at center, rgba(17, 17, 17, 0.38) 0%, rgba(17, 17, 17, 0) 70%);
+}
+.cell .token.active-turn, .home-inner-box .token.active-turn { z-index: 30 !important; }
+
+@keyframes bounce {
+    from { transform: translateY(0); }
+    to   { transform: translateY(-5px); }
+}
+/* বোর্ড ঘোরানো অবস্থায় গুটি ১৮০° উল্টানো, তাই লাফানোর দিকও উল্টো */
+@keyframes bounce-flip {
+    from { transform: rotate(180deg) translateY(0); }
+    to   { transform: rotate(180deg) translateY(5px); }
+}
+
+/* ---------- ৬. এক ঘরে একাধিক গুটি (আংশিক ওভারলাপ, মাথা-রঙ দেখা যায়) ---------- */
+.cell[data-count="2"] > .token,
+.cell[data-count="3"] > .token,
+.cell[data-count="4"] > .token,
+.cell[data-count="5"] > .token {
+    position: absolute; margin: 0; left: var(--l); bottom: var(--b);
+}
+.cell[data-count="2"] > .token { height: 74%; }
+.cell[data-count="3"] > .token { height: 62%; }
+.cell[data-count="4"] > .token { height: 54%; }
+.cell[data-count="5"] > .token { height: 45%; }
+
+/* ২টি */
+.cell[data-count="2"] > .token[data-slot="0"] { --l: 0%;  --b: 2%; }
+.cell[data-count="2"] > .token[data-slot="1"] { --l: 40%; --b: 2%; }
+/* ৩টি: পিরামিড */
+.cell[data-count="3"] > .token[data-slot="0"] { --l: 0%;  --b: 2%; }
+.cell[data-count="3"] > .token[data-slot="1"] { --l: 50%; --b: 2%; }
+.cell[data-count="3"] > .token[data-slot="2"] { --l: 25%; --b: 36%; z-index: 4; }
+/* ৪টি: সামনে ২, পেছনে ২ */
+.cell[data-count="4"] > .token[data-slot="0"] { --l: 4%;  --b: 2%;  z-index: 6; }
+.cell[data-count="4"] > .token[data-slot="1"] { --l: 52%; --b: 2%;  z-index: 6; }
+.cell[data-count="4"] > .token[data-slot="2"] { --l: 4%;  --b: 44%; z-index: 4; }
+.cell[data-count="4"] > .token[data-slot="3"] { --l: 52%; --b: 44%; z-index: 4; }
+/* ৫টি বা বেশি */
+.cell[data-count="5"] > .token[data-slot="0"] { --l: 0%;    --b: 2%;  z-index: 6; }
+.cell[data-count="5"] > .token[data-slot="1"] { --l: 21.3%; --b: 2%;  z-index: 6; }
+.cell[data-count="5"] > .token[data-slot="2"] { --l: 42.7%; --b: 2%;  z-index: 6; }
+.cell[data-count="5"] > .token[data-slot="3"] { --l: 64%;   --b: 2%;  z-index: 6; }
+.cell[data-count="5"] > .token[data-slot="4"] { --l: 0%;    --b: 44%; z-index: 4; }
+.cell[data-count="5"] > .token[data-slot="5"] { --l: 21.3%; --b: 44%; z-index: 4; }
+.cell[data-count="5"] > .token[data-slot="6"] { --l: 42.7%; --b: 44%; z-index: 4; }
+.cell[data-count="5"] > .token[data-slot="7"] { --l: 64%;   --b: 44%; z-index: 4; }
+.cell[data-count="5"] > .token[data-slot="8"] { --l: 32%;   --b: 24%; z-index: 5; }
+
+/* ---------- ৭. ডাইস ---------- */
+.dice-container {
+    position: fixed; width: var(--dice); height: var(--dice);
+    display: flex; justify-content: center; align-items: center;
+    perspective: 400px; cursor: pointer; z-index: 9999; pointer-events: auto;
+    transition: opacity 0.2s ease;
+}
+.dice-container::after {
+    content: ''; position: absolute; left: 50%; bottom: 1px; width: 44px; height: 9px;
+    transform: translateX(-50%); z-index: -1; pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0) 70%);
+}
+#dice-top-right {
+    top: calc(var(--H) / 2 - var(--board) / 2 - var(--dice) - var(--dice-gap));
+    right: calc((100vw - var(--board)) / 2);
+}
+#dice-bottom-left {
+    top: calc(var(--H) / 2 + var(--board) / 2 + var(--dice-gap));
+    left: calc((100vw - var(--board)) / 2);
+}
+
+.cube {
+    width: 50px; height: 50px; position: relative;
+    transform-style: preserve-3d; transition: transform 1s ease-out; pointer-events: none;
+}
+.face {
+    position: absolute; width: 50px; height: 50px;
+    background: linear-gradient(145deg, #ffffff, #EDEFF2);
+    border: 1px solid rgba(0, 0, 0, 0.09); border-radius: 11px;
+    box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.05);
+    display: flex; justify-content: center; align-items: center;
+    pointer-events: none;
+}
+.front  { transform: translateZ(25px); }
+.back   { transform: rotateY(180deg) translateZ(25px); }
+.right  { transform: rotateY(90deg) translateZ(25px); }
+.left   { transform: rotateY(-90deg) translateZ(25px); }
+.top    { transform: rotateX(90deg) translateZ(25px); }
+.bottom { transform: rotateX(-90deg) translateZ(25px); }
+.dice-svg { width: 100%; height: 100%; }
+.dice-svg circle { fill: #111 !important; pointer-events: none; }
+
+/* ডাইসের পাশের ছোট লেবেল (You / Friend) */
+.dice-label {
+    position: fixed; z-index: 9000;
+    font-size: 11px; font-weight: 600; line-height: 1.5; color: var(--ink); white-space: nowrap;
+    padding: 2px 11px; border-radius: 12px; background: #fff;
+    border: 1px solid var(--line); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+    pointer-events: none; transition: all 0.2s ease;
+}
+.dice-label:empty { display: none; }
+.dice-label.active { border-color: var(--ink); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14); }
+.label-top {
+    left: calc((100vw - var(--board)) / 2);
+    top: calc(var(--H) / 2 - var(--board) / 2 - var(--dice) / 2 - var(--dice-gap) - 11px);
+}
+.label-bottom {
+    right: calc((100vw - var(--board)) / 2);
+    top: calc(var(--H) / 2 + var(--board) / 2 + var(--dice-gap) + var(--dice) / 2 - 11px);
+}
+
+/* ==========================================================
+   ৮. বোর্ড ঘোরানো (body.flipped = হলুদ প্লেয়ার)
+   ========================================================== */
+body.flipped .grid-container { transform: rotate(180deg); }
+body.flipped .token { transform: rotate(180deg); animation-name: bounce-flip !important; }
+
+/* ঘোরানো বোর্ডে একাধিক গুটির জায়গা উল্টে দেওয়া, যাতে পর্দায় একই সাজানো থাকে */
+body.flipped .cell:is([data-count="2"], [data-count="3"], [data-count="4"], [data-count="5"]) > .token {
+    left: auto; bottom: auto; right: var(--l); top: var(--b);
+}
+
+/* তারা সোজা রাখা */
+body.flipped :is(#cell-22, #cell-93, #cell-122, #cell-187, #cell-204, #cell-133, #cell-104, #cell-39)::after {
+    transform: rotate(180deg);
+}
+
+/* ডাইসের জায়গা অদলবদল */
+body.flipped #dice-top-right {
+    top: calc(var(--H) / 2 + var(--board) / 2 + var(--dice-gap));
+    right: auto; left: calc((100vw - var(--board)) / 2);
+}
+body.flipped #dice-bottom-left {
+    top: calc(var(--H) / 2 - var(--board) / 2 - var(--dice) - var(--dice-gap));
+    left: auto; right: calc((100vw - var(--board)) / 2);
+}
+
+/* ==========================================================
+   ৯. ওপরের হালকা বার
+   ========================================================== */
+.hud {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10000;
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    padding: calc(env(safe-area-inset-top, 0px) + 8px) 12px 0;
+    pointer-events: none;
+}
+.hud > * { pointer-events: auto; }
+.hud-left {
+    width: 40px; height: 40px; border-radius: 50%; background: #fff;
+    border: 1px solid var(--line); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    display: flex; align-items: center; justify-content: center;
+}
+.hud-right { display: flex; align-items: center; gap: 8px; }
+#voice-widget { display: flex; align-items: center; }
+
+.conn-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.conn-on  { background: #22C55E; box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18); }
+.conn-off { background: #EF4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18); }
+
+/* গোল সাদা আইকন বাটন */
+.icon-btn {
+    width: 40px; height: 40px; padding: 0; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: #fff; color: var(--ink); border: 1px solid var(--line);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    cursor: pointer; font-family: inherit; transition: transform 0.15s ease;
+}
+.icon-btn svg { width: 20px; height: 20px; display: block; }
+.icon-btn:active { transform: scale(0.94); }
+.icon-btn-sm { width: 30px; height: 30px; box-shadow: none; }
+.icon-btn-sm svg { width: 16px; height: 16px; }
+.icon-btn .mic-off { display: none; }
+.icon-btn.muted .mic-on { display: none; }
+.icon-btn.muted .mic-off { display: block; }
+
+.pill-btn {
+    padding: 7px 14px; border-radius: 14px; background: #fff; color: var(--ink);
+    border: 1px solid var(--line); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.pill-btn:active { transform: scale(0.96); }
+
+/* কার চাল */
+.turn-badge {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    top: calc(env(safe-area-inset-top, 0px) + 58px); z-index: 9500;
+    font-size: 13px; font-weight: 600; white-space: nowrap;
+    padding: 6px 18px; border-radius: 20px; background: #fff; color: var(--ink);
+    border: 1px solid var(--line); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    pointer-events: none; transition: all 0.2s ease;
+}
+.turn-badge.turn-mine { border-color: var(--ink); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16); }
+.turn-badge.turn-opp { color: #3a3f47; }
+
+/* মেসেঞ্জার/ফেসবুক ব্রাউজারের সতর্কবার */
+.inapp-banner {
+    position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 10px; right: 10px; z-index: 10001;
+    display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px;
+    background: #fff; border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+    color: var(--ink); font-size: 13px; font-weight: 600; line-height: 1.35;
+}
+.inapp-text { flex: 1; min-width: 0; }
+
+/* ==========================================================
+   ১০. পপআপ ও লবি কার্ড
+   ========================================================== */
+.overlay {
+    position: fixed; inset: 0; z-index: 30000;
+    display: flex; justify-content: center; align-items: center;
+    background: rgba(245, 246, 248, 0.72);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+/* হোম/লবি: পুরো পেজ জুড়ে সাদা-ধূসর আলো */
+#lobby-overlay {
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+    background:
+        radial-gradient(120% 70% at 15% 0%, #ffffff 0%, rgba(255,255,255,0) 60%),
+        radial-gradient(90% 60% at 100% 55%, #D5D8DE 0%, rgba(213,216,222,0) 60%),
+        #F5F6F8;
+}
+
+.lobby-card, .win-card {
+    width: 88%; max-width: 340px; padding: 26px 22px; text-align: center;
+    background: linear-gradient(180deg, #ffffff, #F1F2F5);
+    border: 1px solid rgba(255, 255, 255, 0.95); border-radius: 32px;
+    box-shadow: 0 22px 50px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.05);
+    color: var(--ink); animation: popIn 0.2s ease-out;
+}
+@keyframes popIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
+}
+.lobby-card h2, .win-card h2 { margin: 4px 0 18px; font-size: 22px; font-weight: 700; color: var(--ink); }
+#lobby-home h2 { font-size: 34px; letter-spacing: -0.5px; margin: 0 0 22px; }
+#win-message { font-size: 26px; }
+
+/* কার্ডের ওপরের সাদা আইকন-বক্স (extras.js ব্যবহার করবে) */
+.icon-box {
+    width: 84px; height: 84px; margin: 0 auto 18px; border-radius: 26px;
+    background: #fff; border: 1px solid var(--line); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+    display: flex; align-items: center; justify-content: center; color: var(--ink);
+}
+.icon-box svg { width: 38px; height: 38px; }
+
+.conn-msg { margin: 6px 0 16px; font-size: 15px; font-weight: 500; line-height: 1.5; color: #23272e; }
+#lobby-error-text { color: var(--ink) !important; font-weight: 600; }
+
+/* বাটন: সব সাদা, গাঢ় লেখা */
+.restart-btn, .ghost-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 15px 18px; border-radius: 20px; cursor: pointer;
+    font-family: inherit; font-size: 16px; font-weight: 600; color: var(--ink);
+    background: #fff; border: 1px solid var(--line);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    transition: transform 0.15s ease;
+}
+.ghost-btn { background: rgba(255, 255, 255, 0.75); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
+.restart-btn:active, .ghost-btn:active { transform: scale(0.97); }
+.restart-btn svg, .ghost-btn svg { width: 18px; height: 18px; }
+.restart-btn:disabled { opacity: 0.6; }
+.lobby-card > button { width: 100%; margin-top: 12px; }
+.btn-row { display: flex; gap: 10px; margin-top: 12px; }
+.btn-row > button { flex: 1; }
+
+/* লিংক বাক্স */
+.lobby-card input {
+    width: 100%; padding: 14px 16px; border-radius: 18px;
+    background: #F4F5F7; color: var(--ink); border: 1px solid var(--line);
+    font-family: inherit; font-size: 13px; font-weight: 500; outline: none;
+    text-overflow: ellipsis; user-select: text; -webkit-user-select: text;
+}
+
+/* স্পিনার */
+.spinner {
+    width: 30px; height: 30px; margin: 4px auto 12px;
+    border: 3px solid rgba(0, 0, 0, 0.1); border-top-color: var(--ink);
+    border-radius: 50%; animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ==========================================================
+   ১১. টোস্ট ও ক্রেডিট
+   ========================================================== */
+.toast-container {
+    position: fixed; left: 50%; bottom: 74px; transform: translateX(-50%);
+    z-index: 40000; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    width: calc(100% - 32px); max-width: 380px; pointer-events: none;
+}
+.toast {
+    padding: 10px 18px; font-size: 14px; font-weight: 600; text-align: center; color: var(--ink);
+    background: #fff; border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+    opacity: 0; transform: translateY(10px); transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast-success { border-color: rgba(34, 197, 94, 0.5); }
+.toast-error { border-color: rgba(239, 68, 68, 0.5); }
+
+/* নিচের ডানে ক্রেডিট: কালো, গাঢ়, চিকন */
+.footer-credit {
+    position: fixed; bottom: 10px; right: 15px; z-index: 30001;
+    font-family: 'Inter', system-ui, sans-serif; font-size: 11px; font-weight: 300;
+    line-height: 1.4; text-align: right; color: #000; letter-spacing: 0.3px;
+    pointer-events: none;
+}
+.credit-heart { width: 10px; height: 10px; fill: #000; vertical-align: -1px; }
+
+/* ==========================================================
+   ১২. ছোট স্ক্রিন
+   ========================================================== */
+@media (max-height: 640px) {
+    .turn-badge { top: calc(env(safe-area-inset-top, 0px) + 52px); padding: 4px 14px; }
+}

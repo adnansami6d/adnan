@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#F5F6F8">
+    <title>Ludo</title>
+
+    <!-- Inter ফন্ট -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- PeerJS: খেলার লাইভ যোগাযোগ -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+    <link rel="stylesheet" href="home.css">
+</head>
+<body>
+
+    <!-- ১. মেসেঞ্জার/ফেসবুক ব্রাউজারের সতর্কবার (extras.js দেখাবে) -->
+    <div id="inapp-banner" class="inapp-banner" hidden>
+        <span class="inapp-text">Open in Chrome for a stable game</span>
+        <button id="open-chrome-btn" class="pill-btn" type="button">Open</button>
+        <button id="inapp-close-btn" class="icon-btn icon-btn-sm" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+    </div>
+
+    <!-- ২. ওপরের হালকা বার: বাঁয়ে কানেকশন ডট, ডানে আইকন বাটন -->
+    <div id="hud" class="hud">
+        <div class="hud-left">
+            <span id="conn-dot" class="conn-dot conn-off"></span>
+        </div>
+        <div class="hud-right">
+            <!-- নতুন খেলা -->
+            <button id="reset-btn" class="icon-btn" type="button" aria-label="New game">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+            </button>
+            <!-- হোম -->
+            <button id="lobby-btn" class="icon-btn" type="button" aria-label="Home">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
+            </button>
+            <!-- মাইক (extras.js কানেকশন হলে দেখাবে) -->
+            <span id="voice-widget" hidden>
+                <button id="mic-btn" class="icon-btn" type="button" aria-label="Microphone">
+                    <svg class="mic-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+                    <svg class="mic-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/><path d="M3 3l18 18"/></svg>
+                </button>
+                <audio id="remote-voice" autoplay playsinline></audio>
+            </span>
+        </div>
+    </div>
+
+    <!-- কার চাল চলছে (Your turn / Their turn) -->
+    <div id="turn-badge" class="turn-badge" hidden></div>
+
+    <!-- ==========================================================
+         ৩. লবি কার্ড
+            ভেতরের অংশ extras.js বানায় (Create Room / Copy / Share / Joining / Error)।
+            তাই এখানে শুধু খালি খোলস।
+         ========================================================== -->
+    <div id="lobby-overlay" class="overlay"></div>
+
+    <!-- কানেকশন হারালে -->
+    <div id="conn-overlay" class="overlay" hidden>
+        <div class="lobby-card">
+            <h2 id="conn-title">Connection lost</h2>
+            <p id="conn-msg" class="conn-msg"></p>
+            <button id="conn-lobby-btn" class="restart-btn" type="button">Home</button>
+        </div>
+    </div>
+
+    <!-- নতুন খেলার নিশ্চিতকরণ -->
+    <div id="confirm-overlay" class="overlay" hidden>
+        <div class="lobby-card">
+            <h2>Start a new game?</h2>
+            <div class="btn-row">
+                <button id="confirm-no-btn" class="ghost-btn" type="button">Cancel</button>
+                <button id="confirm-yes-btn" class="restart-btn" type="button">Start</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- জেতার পর -->
+    <div id="win-overlay" class="overlay" hidden>
+        <div class="win-card">
+            <h2 id="win-message"></h2>
+            <div class="btn-row">
+                <button id="win-lobby-btn" class="ghost-btn" type="button">Home</button>
+                <button id="win-restart-btn" class="restart-btn" type="button">Play again</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================
+         ৪. লুডু বোর্ড (১৫×১৫)
+            ⚠️ ঘরগুলোর ক্রম ও ID একটুও বদলানো যাবে না।
+         ========================================================== -->
+    <div class="grid-container" id="board">
+
+        <!-- Row 15 -->
+        <div id="cell-211" class="cell"></div>
+        <div id="cell-212" class="cell"></div>
+        <div id="cell-213" class="cell"></div>
+        <div id="cell-214" class="cell"></div>
+        <div id="cell-215" class="cell"></div>
+        <div id="cell-216" class="cell"></div>
+        <div id="cell-217" class="cell"></div>
+        <div id="cell-218" class="cell"></div>
+        <div id="cell-219" class="cell"></div>
+        <div id="cell-220" class="cell"></div>
+        <div id="cell-221" class="cell"></div>
+        <div id="cell-222" class="cell"></div>
+        <div id="cell-223" class="cell"></div>
+        <div id="cell-224" class="cell"></div>
+        <div id="cell-225" class="cell"></div>
+
+        <!-- Row 14 -->
+        <div id="cell-196" class="cell"></div>
+        <div id="cell-201" class="cell"></div>
+        <div id="cell-202" class="cell"></div>
+        <div id="cell-203" class="cell"></div>
+        <div id="cell-204" class="cell"></div>
+        <div id="cell-205" class="cell"></div>
+
+        <!-- হলুদ বেস (ডানে উপরে) -->
+        <div id="top-right-home" class="home-box">
+            <div class="home-inner-box">
+                <div id="yellow-1" class="token yellow-token"></div>
+                <div id="yellow-2" class="token yellow-token"></div>
+                <div id="yellow-3" class="token yellow-token"></div>
+                <div id="yellow-4" class="token yellow-token"></div>
+            </div>
+        </div>
+
+        <div id="cell-210" class="cell"></div>
+
+        <!-- Row 13 -->
+        <div id="cell-181" class="cell"></div>
+        <div id="cell-186" class="cell"></div>
+        <div id="cell-187" class="cell"></div>
+        <div id="cell-188" class="cell"></div>
+        <div id="cell-189" class="cell"></div>
+        <div id="cell-190" class="cell"></div>
+        <div id="cell-195" class="cell"></div>
+
+        <!-- Row 12 -->
+        <div id="cell-166" class="cell"></div>
+        <div id="cell-171" class="cell"></div>
+        <div id="cell-172" class="cell"></div>
+        <div id="cell-173" class="cell"></div>
+        <div id="cell-174" class="cell"></div>
+        <div id="cell-175" class="cell"></div>
+        <div id="cell-180" class="cell"></div>
+
+        <!-- Row 11 -->
+        <div id="cell-151" class="cell"></div>
+
+        <!-- নীল বেস (বামে উপরে, সাজসজ্জা) -->
+        <div id="top-left-home" class="home-box">
+            <div class="home-inner-box">
+                <div id="blue-1" class="token blue-token"></div>
+                <div id="blue-2" class="token blue-token"></div>
+                <div id="blue-3" class="token blue-token"></div>
+                <div id="blue-4" class="token blue-token"></div>
+            </div>
+        </div>
+
+        <div id="cell-156" class="cell"></div>
+        <div id="cell-157" class="cell"></div>
+        <div id="cell-158" class="cell"></div>
+        <div id="cell-159" class="cell"></div>
+        <div id="cell-160" class="cell"></div>
+        <div id="cell-165" class="cell"></div>
+
+        <!-- Row 10 -->
+        <div id="cell-136" class="cell"></div>
+        <div id="cell-137" class="cell"></div>
+        <div id="cell-138" class="cell"></div>
+        <div id="cell-139" class="cell"></div>
+        <div id="cell-140" class="cell"></div>
+        <div id="cell-141" class="cell"></div>
+        <div id="cell-142" class="cell"></div>
+        <div id="cell-143" class="cell"></div>
+        <div id="cell-144" class="cell"></div>
+        <div id="cell-145" class="cell"></div>
+        <div id="cell-146" class="cell"></div>
+        <div id="cell-147" class="cell"></div>
+        <div id="cell-148" class="cell"></div>
+        <div id="cell-149" class="cell"></div>
+        <div id="cell-150" class="cell"></div>
+
+        <!-- Row 9 -->
+        <div id="cell-121" class="cell"></div>
+        <div id="cell-122" class="cell"></div>
+        <div id="cell-123" class="cell"></div>
+        <div id="cell-124" class="cell"></div>
+        <div id="cell-125" class="cell"></div>
+        <div id="cell-126" class="cell"></div>
+        <div id="cell-130" class="cell"></div>
+        <div id="cell-131" class="cell"></div>
+        <div id="cell-132" class="cell"></div>
+        <div id="cell-133" class="cell"></div>
+        <div id="cell-134" class="cell"></div>
+        <div id="cell-135" class="cell"></div>
+
+        <!-- Row 8 -->
+        <div id="cell-106" class="cell"></div>
+        <div id="cell-107" class="cell"></div>
+        <div id="cell-108" class="cell"></div>
+        <div id="cell-109" class="cell"></div>
+        <div id="cell-110" class="cell"></div>
+        <div id="cell-111" class="cell"></div>
+        <div id="cell-115" class="cell"></div>
+        <div id="cell-116" class="cell"></div>
+        <div id="cell-117" class="cell"></div>
+        <div id="cell-118" class="cell"></div>
+        <div id="cell-119" class="cell"></div>
+        <div id="cell-120" class="cell"></div>
+
+        <!-- Row 7 -->
+        <div id="cell-91" class="cell"></div>
+        <div id="cell-92" class="cell"></div>
+        <div id="cell-93" class="cell"></div>
+        <div id="cell-94" class="cell"></div>
+        <div id="cell-95" class="cell"></div>
+        <div id="cell-96" class="cell"></div>
+
+        <!-- মাঝের পাকা ঘর (চার ত্রিভুজ) -->
+        <div id="center-home">
+            <div id="home-top" class="triangle"></div>
+            <div id="home-right" class="triangle"></div>
+            <div id="home-bottom" class="triangle"></div>
+            <div id="home-left" class="triangle"></div>
+        </div>
+
+        <div id="cell-100" class="cell"></div>
+        <div id="cell-101" class="cell"></div>
+        <div id="cell-102" class="cell"></div>
+        <div id="cell-103" class="cell"></div>
+        <div id="cell-104" class="cell"></div>
+        <div id="cell-105" class="cell"></div>
+
+        <!-- Row 6 -->
+        <div id="cell-76" class="cell"></div>
+        <div id="cell-77" class="cell"></div>
+        <div id="cell-78" class="cell"></div>
+        <div id="cell-79" class="cell"></div>
+        <div id="cell-80" class="cell"></div>
+        <div id="cell-81" class="cell"></div>
+        <div id="cell-82" class="cell"></div>
+        <div id="cell-83" class="cell"></div>
+        <div id="cell-84" class="cell"></div>
+        <div id="cell-85" class="cell"></div>
+        <div id="cell-86" class="cell"></div>
+        <div id="cell-87" class="cell"></div>
+        <div id="cell-88" class="cell"></div>
+        <div id="cell-89" class="cell"></div>
+        <div id="cell-90" class="cell"></div>
+
+        <!-- Row 5 -->
+        <div id="cell-61" class="cell"></div>
+        <div id="cell-66" class="cell"></div>
+        <div id="cell-67" class="cell"></div>
+        <div id="cell-68" class="cell"></div>
+        <div id="cell-69" class="cell"></div>
+        <div id="cell-70" class="cell"></div>
+
+        <!-- সবুজ বেস (ডানে নিচে, সাজসজ্জা) -->
+        <div id="bottom-right-home" class="home-box">
+            <div class="home-inner-box">
+                <div id="green-1" class="token green-token"></div>
+                <div id="green-2" class="token green-token"></div>
+                <div id="green-3" class="token green-token"></div>
+                <div id="green-4" class="token green-token"></div>
+            </div>
+        </div>
+
+        <div id="cell-75" class="cell"></div>
+
+        <!-- Row 4 -->
+        <div id="cell-46" class="cell"></div>
+        <div id="cell-51" class="cell"></div>
+        <div id="cell-52" class="cell"></div>
+        <div id="cell-53" class="cell"></div>
+        <div id="cell-54" class="cell"></div>
+        <div id="cell-55" class="cell"></div>
+        <div id="cell-60" class="cell"></div>
+
+        <!-- Row 3 -->
+        <div id="cell-31" class="cell"></div>
+        <div id="cell-36" class="cell"></div>
+        <div id="cell-37" class="cell"></div>
+        <div id="cell-38" class="cell"></div>
+        <div id="cell-39" class="cell"></div>
+        <div id="cell-40" class="cell"></div>
+        <div id="cell-45" class="cell"></div>
+        <div id="cell-16" class="cell"></div>
+
+        <!-- লাল বেস (বামে নিচে) -->
+        <div id="bottom-left-home" class="home-box">
+            <div class="home-inner-box">
+                <div id="red-1" class="token red-token"></div>
+                <div id="red-2" class="token red-token"></div>
+                <div id="red-3" class="token red-token"></div>
+                <div id="red-4" class="token red-token"></div>
+            </div>
+        </div>
+
+        <div id="cell-21" class="cell"></div>
+        <div id="cell-22" class="cell"></div>
+        <div id="cell-23" class="cell"></div>
+        <div id="cell-24" class="cell"></div>
+        <div id="cell-25" class="cell"></div>
+        <div id="cell-30" class="cell"></div>
+
+        <!-- Row 1-2 (নিচের সারি) -->
+        <div id="cell-1" class="cell"></div>
+        <div id="cell-2" class="cell"></div>
+        <div id="cell-3" class="cell"></div>
+        <div id="cell-4" class="cell"></div>
+        <div id="cell-5" class="cell"></div>
+        <div id="cell-6" class="cell"></div>
+        <div id="cell-7" class="cell"></div>
+        <div id="cell-8" class="cell"></div>
+        <div id="cell-9" class="cell"></div>
+        <div id="cell-10" class="cell"></div>
+        <div id="cell-11" class="cell"></div>
+        <div id="cell-12" class="cell"></div>
+        <div id="cell-13" class="cell"></div>
+        <div id="cell-14" class="cell"></div>
+        <div id="cell-15" class="cell"></div>
+    </div>
+
+    <!-- ==========================================================
+         ৫. ডাইস (বোর্ডের বাইরে, যাতে বোর্ড ঘোরালেও ঠিক জায়গায় থাকে)
+         ========================================================== -->
+
+    <!-- হলুদের ডাইস (ডিফল্টে উপরে) -->
+    <div id="dice-top-right" class="dice-container">
+        <div class="cube">
+            <div class="face front"><svg viewBox="0 0 100 100" class="dice-svg"><circle cx="50" cy="50" r="12"/></svg></div>
+            <div class="face back"><svg viewBox="0 0 100 100" class="dice-svg">
+                <circle cx="28" cy="25" r="10"/><circle cx="28" cy="50" r="10"/><circle cx="28" cy="75" r="10"/>
+                <circle cx="72" cy="25" r="10"/><circle cx="72" cy="50" r="10"/><circle cx="72" cy="75" r="10"/>
+            </svg></div>
+            <div class="face right"><svg viewBox="0 0 100 100" class="dice-svg">
+                <circle cx="25" cy="25" r="10"/><circle cx="50" cy="50" r="10"/><circle cx="75" cy="75" r="10"/>
+            </svg></div>
+            <div class="face left"><svg viewBox="0 0 100 100" class="dice-svg">
+                <circle cx="28" cy="28" r="10"/><circle cx="28" cy="72" r="10"/>
+                <circle cx="72" cy="28" r="10"/><circle cx="72" cy="72" r="10"/>
+            </svg></div>
+            <div class="face top"><svg viewBox="0 0 100 100" class="dice-svg">
+                <circle cx="28" cy="28" r="10"/><circle cx="72" cy="72" r="10"/>
+            </svg></div>
+            <div class="face bottom"><svg viewBox="0 0 100 100" class="dice-svg">
+                <circle cx="25" cy="25" r="10"/><circle cx="25" cy="75" r="10"/><circle cx="50" cy="50" r="10"/>
+                <circle cx="75" cy="25" r="10"/><circle cx="75" cy="75" r="10"/>
+            </svg></div>
+        </div>
+    </div>
+
+    <!-- লালের ডাইস (ডিফল্টে নিচে) -->
+    <div id="dice-bottom-left" class="dice-container">
+        <div class="cube">
+            <div class="face front"><svg viewBox="0 0 100 100" class="dice-svg"><circle cx="50" cy="50" r="12"/></svg></div>
+            <div class="face back"><svg viewBox="0 0 100 100" class="dice-svg">
+                <circle cx="28" cy="25" r="10"/><circle cx="28" cy="50" r="10"/><circle cx="28" cy="75" r="10"/>
+                <circle cx="72" cy="25" r="10"/><circle cx="72" cy="50" r="10"/><circle cx="72" cy="75" r="10"/>
+            </svg></div>
+            <div class="face right"><svg viewBox="0 0 100 100" class="dice-svg">
+                <circle cx="25" cy="25" r="10"/><circle cx="50" cy="50" r="10"/><circle cx="75" cy="75" r="10"/>
+            </svg></div>
+            <div class="face left"><svg viewBox="0 0 100 100" class="dice-svg">
+                <circle cx="28" cy="28" r="10"/><circle cx="28" cy="72" r="10"/>
+                <circle cx="72" cy="28" r="10"/><circle cx="72" cy="72" r="10"/>
+            </svg></div>
+            <div class="face top"><svg viewBox="0 0 100 100" class="dice-svg">
+                <circle cx="28" cy="28" r="10"/><circle cx="72" cy="72" r="10"/>
+            </svg></div>
+            <div class="face bottom"><svg viewBox="0 0 100 100" class="dice-svg">
+                <circle cx="25" cy="25" r="10"/><circle cx="25" cy="75" r="10"/><circle cx="50" cy="50" r="10"/>
+                <circle cx="75" cy="25" r="10"/><circle cx="75" cy="75" r="10"/>
+            </svg></div>
+        </div>
+    </div>
+
+    <!-- ডাইসের পাশে ছোট লেবেল (game.js লিখবে: You / Friend) -->
+    <div id="label-bottom" class="dice-label label-bottom"></div>
+    <div id="label-top" class="dice-label label-top"></div>
+
+    <!-- ছোট নোটিফিকেশন -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <!-- ফুটার ক্রেডিট (কালো, গাঢ়, চিকন ফন্টে — CSS-এ স্টাইল হবে) -->
+    <div class="footer-credit">© Since 2026 <svg class="credit-heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 2.8 5 6.1 5c2 0 3.3 1 3.9 2.2h4C14.600 6 15.900 5 17.900 5c3.300 0 5.200 3.300 3.700 6.700C19.500 16.400 12 21 12 21z"/></svg><br>powered by Adnan Sami</div>
+
+    <!-- স্ক্রিপ্টের ক্রম বদলাবেন না: game → connection → extras -->
+    <script src="game.js"></script>
+    <script src="connection.js"></script>
+    <script src="extras.js"></script>
+</body>
+</html>

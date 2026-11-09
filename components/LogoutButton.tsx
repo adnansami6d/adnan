@@ -2,8 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import Button from "./Button";
 
-export default function LogoutButton() {
+/** Plain text style by default (it is not a main action). Shows a spinner while signing out and cannot be double-tapped. */
+export default function LogoutButton({ className = "" }: { className?: string }) {
   const router = useRouter();
 
   async function logout() {
@@ -13,8 +15,8 @@ export default function LogoutButton() {
   }
 
   return (
-    <button type="button" onClick={logout} className="rounded-lg px-3 py-2 hover:bg-neutral-100">
+    <Button type="button" variant="outline" size="md" onClick={logout} className={className}>
       লগআউট
-    </button>
+    </Button>
   );
 }

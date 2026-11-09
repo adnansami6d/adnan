@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { taka } from "@/lib/format";
+import Balance from "@/components/Balance";
 import ProfileForm from "@/components/ProfileForm";
 import LogoutButton from "@/components/LogoutButton";
 import { buttonClasses } from "@/components/Button";
@@ -24,44 +24,45 @@ export default async function AccountPage() {
   const isAdmin = user.app_metadata?.role === "admin";
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="mx-auto max-w-2xl px-4 py-6 md:py-8">
+      <div className="mb-5 flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">আমার অ্যাকাউন্ট</h1>
         <LogoutButton />
       </div>
 
-      <section className="rounded-lg border border-neutral-200 p-4">
-        <dl className="space-y-2 text-sm">
-          <div className="flex justify-between gap-4">
+      <section className="card p-5">
+        <dl className="space-y-3 text-[15px]">
+          <div className="flex items-center justify-between gap-4">
             <dt className="text-neutral-600">ফোন নম্বর</dt>
-            <dd>{profile?.phone ?? "দেওয়া হয়নি"}</dd>
+            <dd className="font-medium">{profile?.phone ?? "দেওয়া হয়নি"}</dd>
           </div>
-          <div className="flex justify-between gap-4">
+          <div className="flex items-center justify-between gap-4">
             <dt className="text-neutral-600">কয়েন ব্যালান্স</dt>
-            <dd className="font-semibold">{taka(wallet?.balance ?? 0).replace("৳", "")} কয়েন</dd>
+            <dd>
+              <Balance amount={wallet?.balance ?? 0} size="md" />
+            </dd>
           </div>
         </dl>
       </section>
 
-      <section className="mt-6 rounded-lg border border-neutral-200 p-4">
-        <h2 className="mb-3 font-semibold">প্রোফাইল</h2>
+      <section className="card mt-5 p-5">
+        <h2 className="mb-3 text-lg font-bold">প্রোফাইল</h2>
         <ProfileForm userId={user.id} fullName={profile?.full_name ?? ""} />
       </section>
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link href="/account/orders" className={buttonClasses("outline")}>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <Link href="/account/orders" className={buttonClasses("outline", "lg")}>
           আমার অর্ডার
         </Link>
-        <Link href="/wallet" className={buttonClasses("outline")}>
+        <Link href="/wallet" className={buttonClasses("outline", "lg")}>
           ওয়ালেট
         </Link>
         {isAdmin && (
-          <Link href="/admin" className={buttonClasses("primary")}>
+          <Link href="/admin" className={buttonClasses("primary", "lg", "sm:col-span-2")}>
             অ্যাডমিন প্যানেল
           </Link>
         )}
       </div>
     </div>
   );
-      }
-            
+}

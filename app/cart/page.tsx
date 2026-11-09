@@ -7,6 +7,7 @@ import { loadCoupon, removeFromCart, saveCoupon, updateQuantity, useCart } from 
 import { taka } from "@/lib/format";
 import CartItemRow, { type LiveInfo } from "@/components/CartItem";
 import Button, { buttonClasses } from "@/components/Button";
+import { LoadingFrame, Skeleton, SkeletonPanel, SkeletonRows } from "@/components/Skeleton";
 
 type Validation = { valid: boolean; discount?: number; code?: string; message?: string };
 
@@ -197,27 +198,37 @@ export default function CartPage() {
   }
 
   if (!ready) {
-    return <div className="mx-auto max-w-4xl px-4 py-10 text-neutral-500">লোড হচ্ছে...</div>;
+    return (
+      <LoadingFrame width="max-w-5xl">
+        <Skeleton className="mb-6 h-8 w-44" />
+        <div className="grid gap-8 md:grid-cols-[1fr_340px]">
+          <SkeletonRows rows={2} />
+          <SkeletonPanel lines={5} />
+        </div>
+      </LoadingFrame>
+    );
   }
 
   if (items.length === 0) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold">আপনার কার্ট খালি</h1>
-        <p className="mt-2 text-neutral-500">পছন্দের প্রোডাক্ট কার্টে যোগ করুন।</p>
-        <Link href="/products" className={`${buttonClasses("primary", "lg")} mt-6`}>
-          প্রোডাক্ট দেখুন
-        </Link>
+      <div className="mx-auto max-w-md px-4 py-16">
+        <div className="card p-8 text-center">
+          <h1 className="text-2xl font-bold">আপনার কার্ট খালি</h1>
+          <p className="mt-2 text-neutral-600">পছন্দের প্রোডাক্ট কার্টে যোগ করুন।</p>
+          <Link href="/products" className={buttonClasses("primary", "lg", "mt-6 w-full")}>
+            প্রোডাক্ট দেখুন
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold">আপনার কার্ট</h1>
+    <div className="mx-auto max-w-5xl px-4 py-6 md:py-8">
+      <h1 className="mb-5 text-2xl font-bold">আপনার কার্ট</h1>
 
-      <div className="grid gap-8 md:grid-cols-[1fr_340px]">
-        <ul>
+      <div className="grid gap-6 md:grid-cols-[1fr_340px] md:gap-8">
+        <ul className="space-y-3">
           {rows.map(({ item, info }) => (
             <CartItemRow
               key={item.variantId}
@@ -229,29 +240,37 @@ export default function CartPage() {
           ))}
         </ul>
 
-        <aside className="h-fit rounded-lg border border-neutral-200 p-4 md:sticky md:top-24">
-          <h2 className="mb-3 text-lg font-semibold">অর্ডারের সারাংশ</h2>
+        <aside className="card h-fit space-y-4 p-5 md:sticky md:top-24">
+          <h2 className="text-lg font-bold">অর্ডারের সারাংশ</h2>
 
           {/* coupon */}
-          <div className="mb-4">
+          <div>
             {applied ? (
-              <div className="flex items-center justify-between rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800">
+              <div className="flex items-center justify-between rounded-2xl border border-green-200 bg-green-50 py-1 pl-4 pr-2 text-sm text-green-800">
                 <span>
                   কুপন <strong>{applied.code}</strong>
                 </span>
-                <button type="button" onClick={removeCoupon} className="underline">
+                <Button type="button" size="sm" variant="ghost" className="min-h-11 text-green-800" onClick={removeCoupon}>
                   সরান
-                </button>
+                </Button>
               </div>
             ) : (
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2.5">
                 <input
                   value={couponInput}
                   onChange={(e) => setCouponInput(e.target.value)}
                   placeholder="কুপন কোড"
-                  className="min-w-0 flex-1 rounded-lg border border-neutral-300 px-3 py-2 text-sm uppercase outline-none focus:border-neutral-900"
+                  aria-label="কুপন কোড"
+                  className="input-pill min-w-0 flex-1 text-sm uppercase"
                 />
-                <Button size="sm" variant="outline" onClick={applyCoupon} loading={checking} disabled={subtotal <= 0}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="min-h-11"
+                  onClick={applyCoupon}
+                  loading={checking}
+                  disabled={subtotal <= 0}
+                >
                   প্রয়োগ
                 </Button>
               </div>
@@ -263,34 +282,34 @@ export default function CartPage() {
             )}
           </div>
 
-          <dl className="space-y-2 text-sm">
-            <div className="flex justify-between">
+          <dl className="space-y-2.5 text-[15px]">
+            <div className="flex justify-between gap-3">
               <dt className="text-neutral-600">সাবটোটাল</dt>
               <dd>{taka(subtotal)}</dd>
             </div>
             {discount > 0 && (
-              <div className="flex justify-between text-green-700">
+              <div className="flex justify-between gap-3 text-green-700">
                 <dt>ছাড়</dt>
                 <dd>− {taka(discount)}</dd>
               </div>
             )}
-            <div className="flex justify-between border-t border-neutral-200 pt-2 font-semibold">
+            <div className="flex justify-between gap-3 border-t border-neutral-900/10 pt-3 text-[17px] font-bold">
               <dt>ডেলিভারি ছাড়া মোট</dt>
               <dd>{taka(subtotal - discount)}</dd>
             </div>
           </dl>
 
-          <p className="mt-3 text-xs text-neutral-500">
+          <p className="text-[13px] leading-relaxed text-neutral-600">
             ডেলিভারি চার্জ চেকআউটে ঠিকানা অনুযায়ী যোগ হবে: ঢাকায় {taka(fees.dhaka)}, ঢাকার বাইরে {taka(fees.outside)}।
           </p>
 
           {hasProblem && (
-            <p className="mt-3 rounded bg-amber-50 px-2 py-1 text-sm text-amber-800">
+            <p className="rounded-2xl bg-amber-50 px-3 py-2 text-sm text-amber-800">
               চেকআউটের আগে অপ্রাপ্য বা স্টকের চেয়ে বেশি পরিমাণের আইটেম ঠিক করুন।
             </p>
           )}
 
-          <div className="mt-4">
+          <div className="space-y-1.5">
             {hasProblem || subtotal <= 0 ? (
               <Button size="lg" disabled className="w-full">
                 চেকআউটে যান
@@ -300,7 +319,7 @@ export default function CartPage() {
                 চেকআউটে যান
               </Link>
             )}
-            <Link href="/products" className={buttonClasses("ghost", "sm", "mt-2 w-full")}>
+            <Link href="/products" className={buttonClasses("ghost", "sm", "min-h-11 w-full")}>
               আরও কেনাকাটা করুন
             </Link>
           </div>

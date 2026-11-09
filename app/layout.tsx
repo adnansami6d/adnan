@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Noto_Sans_Bengali } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import NavProgress from "@/components/NavProgress";
 import "./globals.css";
 
 // Bangla + Latin font, loaded by Next.js at build time (no layout shift)
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="bn" className={font.variable}>
       <body className="flex min-h-screen flex-col font-sans text-neutral-900 antialiased">
+        <NavProgress />
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />

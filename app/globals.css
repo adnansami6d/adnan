@@ -1,0 +1,276 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ==========================================================================
+   Taz Fashion design system (milestone M0)
+   Theme: soft light "raised" style (white / gray / black, no extra accent color).
+   Everything below is plain CSS so any page can use these class names:
+     .card  .card-sm  .input-pill  .icon-box
+     .btn + (.btn-primary | .btn-secondary | .btn-danger | .btn-ghost) + (.btn-sm | .btn-md | .btn-lg)
+   Buttons should be made with components/Button.tsx (or buttonClasses() for <Link>), not by hand.
+   ========================================================================== */
+
+:root {
+  --ink: #111111;
+  --muted: #6b7280;
+  --line: rgba(15, 23, 42, 0.08);
+
+  /* raised = sticks out of the page, pressed = pushed in */
+  --shadow-raised:
+    0 0 0 1px rgba(15, 23, 42, 0.06), 0 10px 20px -10px rgba(15, 23, 42, 0.35),
+    0 2px 4px rgba(15, 23, 42, 0.06), inset 0 1px 0 #ffffff;
+  --shadow-pressed: 0 0 0 1px rgba(15, 23, 42, 0.1), inset 0 3px 8px rgba(15, 23, 42, 0.2);
+  --shadow-card:
+    0 22px 44px -22px rgba(15, 23, 42, 0.32), 0 2px 6px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --shadow-inset: inset 0 2px 6px rgba(15, 23, 42, 0.09);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  background: #eef0f3; /* fallback while the gradient below paints */
+  min-height: 100%;
+}
+
+body {
+  position: relative;
+  color: var(--ink);
+}
+
+/* page background: white top, soft gray glow on the right, white bottom (like the reference screen) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(75% 42% at 100% 46%, rgba(156, 163, 175, 0.38), transparent 72%),
+    linear-gradient(180deg, #ffffff 0%, #f3f4f6 48%, #ffffff 100%);
+}
+
+/* tapping should feel instant on phones */
+a,
+button,
+summary,
+select {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: #111111;
+  color: #ffffff;
+}
+
+@layer components {
+  /* ---------- cards ---------- */
+  .card {
+    border-radius: 1.75rem;
+    background: linear-gradient(145deg, #ffffff 0%, #eef0f3 100%);
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    box-shadow: var(--shadow-card);
+  }
+  .card-sm {
+    border-radius: 1.25rem;
+    background: linear-gradient(145deg, #ffffff 0%, #f1f3f5 100%);
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    box-shadow: var(--shadow-card);
+  }
+  .icon-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1.25rem;
+    background: linear-gradient(145deg, #ffffff, #f1f3f5);
+    box-shadow: var(--shadow-raised);
+  }
+
+  /* ---------- text inputs: pushed-in pill ---------- */
+  .input-pill {
+    width: 100%;
+    border-radius: 1.1rem;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    background: #f3f4f6;
+    padding: 0.7rem 1rem;
+    color: var(--ink);
+    box-shadow: var(--shadow-inset);
+    outline: none;
+    transition:
+      box-shadow 0.15s ease,
+      background-color 0.15s ease;
+  }
+  .input-pill::placeholder {
+    color: #9ca3af;
+  }
+  .input-pill:focus {
+    background: #ffffff;
+    box-shadow:
+      var(--shadow-inset),
+      0 0 0 2px #111111;
+  }
+
+  /* ---------- buttons ---------- */
+  .btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 1.25rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease,
+      background-color 0.15s ease,
+      filter 0.15s ease;
+  }
+  .btn:focus-visible {
+    outline: 2px solid #111111;
+    outline-offset: 3px;
+  }
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .btn-sm {
+    min-height: 2.25rem;
+    padding: 0.4rem 0.95rem;
+    font-size: 0.875rem;
+  }
+  .btn-md {
+    min-height: 2.75rem;
+    padding: 0.6rem 1.25rem;
+    font-size: 1rem;
+  }
+  .btn-lg {
+    min-height: 3.25rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 1.0625rem;
+  }
+
+  /* main action: dark and raised */
+  .btn-primary {
+    --btn-spin: #ffffff;
+    color: #ffffff;
+    background: linear-gradient(180deg, #2b2b2b 0%, #0e0e0e 100%);
+    box-shadow:
+      0 12px 22px -10px rgba(0, 0, 0, 0.55),
+      0 2px 4px rgba(0, 0, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  }
+  /* normal action: white and raised (same as the "Continue" button in the reference) */
+  .btn-secondary {
+    --btn-spin: #111111;
+    color: var(--ink);
+    background: linear-gradient(180deg, #ffffff 0%, #f1f2f4 100%);
+    box-shadow: var(--shadow-raised);
+  }
+  .btn-danger {
+    --btn-spin: #ffffff;
+    color: #ffffff;
+    background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+    box-shadow:
+      0 12px 22px -10px rgba(220, 38, 38, 0.6),
+      0 2px 4px rgba(127, 29, 29, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+  /* plain text action: no shadow, no border (so it never looks like a real button) */
+  .btn-ghost {
+    --btn-spin: #111111;
+    color: #374151;
+    background: transparent;
+    box-shadow: none;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(55, 65, 81, 0.35);
+  }
+
+  @media (hover: hover) {
+    .btn-primary:hover:not(:disabled) {
+      filter: brightness(1.25);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: linear-gradient(180deg, #ffffff 0%, #e9ebee 100%);
+    }
+    .btn-danger:hover:not(:disabled) {
+      filter: brightness(1.08);
+    }
+    .btn-ghost:hover:not(:disabled) {
+      color: #111111;
+      background: rgba(15, 23, 42, 0.06);
+    }
+  }
+
+  /* pressed: the button sinks in so every tap is visible */
+  .btn:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+  .btn-primary:active:not(:disabled) {
+    box-shadow: inset 0 3px 9px rgba(0, 0, 0, 0.6);
+    filter: brightness(0.9);
+  }
+  .btn-secondary:active:not(:disabled) {
+    background: #eceef1;
+    box-shadow: var(--shadow-pressed);
+  }
+  .btn-danger:active:not(:disabled) {
+    box-shadow: inset 0 3px 9px rgba(127, 29, 29, 0.6);
+    filter: brightness(0.92);
+  }
+  .btn-ghost:active:not(:disabled) {
+    background: rgba(15, 23, 42, 0.1);
+  }
+
+  /* loading: label is hidden (button keeps its size) and a spinner shows in the middle.
+     [aria-busy] comes from the `loading` prop, [data-pending] is set by Button while an async onClick runs */
+  .btn[aria-busy="true"],
+  .btn[data-pending="true"] {
+    color: transparent;
+    pointer-events: none;
+    cursor: progress;
+    opacity: 0.92;
+  }
+  .btn[aria-busy="true"] > *,
+  .btn[data-pending="true"] > * {
+    visibility: hidden;
+  }
+  .btn[aria-busy="true"]::after,
+  .btn[data-pending="true"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 9999px;
+    border: 2.5px solid var(--btn-spin, #111111);
+    border-right-color: transparent;
+    animation: btn-spin 0.7s linear infinite;
+  }
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .input-pill {
+    transition: none;
+  }
+  .btn:active:not(:disabled) {
+    transform: none;
+  }
+}

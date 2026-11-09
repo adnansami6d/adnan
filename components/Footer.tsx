@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Logo from "./Logo";
 
 // Optional contact info: set these in Vercel > Environment Variables (they are shown only when present)
 const phone = process.env.NEXT_PUBLIC_CONTACT_PHONE;
@@ -10,7 +11,7 @@ export default function Footer() {
       <div className="card overflow-hidden">
       <div className="grid gap-8 px-6 py-8 sm:grid-cols-3">
         <div>
-          <p className="text-lg font-bold">Taz Fashion</p>
+          <Logo size="lg" />
           <p className="mt-2 text-sm text-neutral-600">
             ক্যাশ অন ডেলিভারি। সারা বাংলাদেশে ডেলিভারি।
           </p>

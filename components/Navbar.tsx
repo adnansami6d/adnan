@@ -4,6 +4,7 @@ import CartLink from "./CartLink";
 import LogoutButton from "./LogoutButton";
 import NavMenu from "./NavMenu";
 import Balance from "./Balance";
+import Logo from "./Logo";
 
 type SessionInfo = { loggedIn: boolean; isAdmin: boolean; coins: number };
 
@@ -47,9 +48,7 @@ export default async function Navbar() {
       <div className="card-sm relative mx-auto flex max-w-6xl items-center gap-2 px-3 py-2">
         <NavMenu loggedIn={loggedIn} isAdmin={isAdmin} />
 
-        <Link href="/" className="whitespace-nowrap text-lg font-bold tracking-tight">
-          Taz Fashion
-        </Link>
+        <Logo />
 
         {/* search: only on wide screens (on phones it is inside the ☰ menu) */}
         <form action="/products" method="get" className="ml-4 hidden max-w-md flex-1 md:block">

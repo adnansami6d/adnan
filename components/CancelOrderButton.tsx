@@ -31,11 +31,10 @@ export default function CancelOrderButton({ orderId }: { orderId: number }) {
 
   return (
     <div>
-      <Button variant="danger" size="sm" onClick={cancel} loading={loading}>
+      <Button variant="danger" size="sm" onClick={cancel} loading={loading} className="min-h-11">
         অর্ডার বাতিল করুন
       </Button>
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>
   );
-        }
-        
+}

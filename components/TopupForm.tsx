@@ -12,7 +12,7 @@ const METHODS = [
   { key: "rocket", label: "রকেট", number: process.env.NEXT_PUBLIC_ROCKET_NUMBER },
 ] as const;
 
-const inputClass = "w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900";
+const inputClass = "input-pill";
 
 function errorText(message: string) {
   if (message.includes("LOGIN_REQUIRED")) return "আগে লগইন করুন।";
@@ -81,22 +81,25 @@ export default function TopupForm() {
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
       <div>
-        <span className="mb-1 block text-sm font-medium">পেমেন্ট মাধ্যম</span>
-        <div className="flex gap-2">
+        <span className="mb-1.5 block text-sm font-semibold">পেমেন্ট মাধ্যম</span>
+        <div className="flex gap-2.5">
           {METHODS.map((m) => (
-            <button
+            <Button
               key={m.key}
               type="button"
+              size="sm"
+              variant={method === m.key ? "primary" : "outline"}
+              aria-pressed={method === m.key}
+              className="min-h-11 flex-1"
               onClick={() => setMethod(m.key)}
-              className={`rounded-lg border px-4 py-2 text-sm ${method === m.key ? "bg-neutral-900 text-white" : "border-neutral-300"}`}
             >
               {m.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
 
-      <div className="rounded-lg bg-neutral-50 p-3 text-sm">
+      <div className="card-sm p-3.5 text-sm leading-relaxed">
         {selected.number ? (
           <>
             আপনার {selected.label} থেকে <span className="font-bold">সেন্ড মানি</span> করুন এই নম্বরে:{" "}
@@ -105,13 +108,13 @@ export default function TopupForm() {
         ) : (
           <>এই মাধ্যমের নম্বর এখনো দেওয়া হয়নি। অন্য মাধ্যম বেছে নিন বা সাপোর্টে যোগাযোগ করুন।</>
         )}
-        <p className="mt-1 text-xs text-neutral-600">
+        <p className="mt-1.5 text-xs text-neutral-600">
           টাকা পাঠানোর পর নিচের তথ্য দিন। আমরা মিলিয়ে দেখে কয়েন যোগ করে দেব (১ টাকা = ১ কয়েন)।
         </p>
       </div>
 
       <label className="block">
-        <span className="mb-1 block text-sm font-medium">কত টাকা পাঠিয়েছেন</span>
+        <span className="mb-1.5 block text-sm font-semibold">কত টাকা পাঠিয়েছেন</span>
         <input
           value={amount}
           onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
@@ -121,7 +124,7 @@ export default function TopupForm() {
       </label>
 
       <label className="block">
-        <span className="mb-1 block text-sm font-medium">যে নম্বর থেকে পাঠিয়েছেন</span>
+        <span className="mb-1.5 block text-sm font-semibold">যে নম্বর থেকে পাঠিয়েছেন</span>
         <input
           value={sender}
           onChange={(e) => setSender(e.target.value)}
@@ -133,7 +136,7 @@ export default function TopupForm() {
       </label>
 
       <label className="block">
-        <span className="mb-1 block text-sm font-medium">TrxID</span>
+        <span className="mb-1.5 block text-sm font-semibold">TrxID</span>
         <input
           value={trx}
           onChange={(e) => setTrx(e.target.value.toUpperCase())}
@@ -143,17 +146,20 @@ export default function TopupForm() {
         />
       </label>
 
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && (
+        <p role="alert" className="rounded-2xl bg-red-50 px-3 py-2.5 text-sm text-red-700">
+          {error}
+        </p>
+      )}
       {success && (
-        <p role="status" className="rounded-lg bg-green-50 p-3 text-sm text-green-800">
+        <p role="status" className="rounded-2xl bg-green-50 px-3 py-2.5 text-sm text-green-800">
           অনুরোধ পাঠানো হয়েছে। যাচাই শেষে কয়েন যোগ হবে।
         </p>
       )}
 
-      <Button type="submit" loading={loading} className="w-full">
+      <Button type="submit" size="lg" loading={loading} className="w-full">
         অনুরোধ পাঠান
       </Button>
     </form>
   );
-   }
-    
+}

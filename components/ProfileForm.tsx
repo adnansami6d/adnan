@@ -34,20 +34,15 @@ export default function ProfileForm({ userId, fullName }: { userId: string; full
   return (
     <form onSubmit={save} className="space-y-3">
       <label className="block">
-        <span className="mb-1 block text-sm font-medium">নাম</span>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900"
-        />
+        <span className="mb-1.5 block text-sm font-semibold">নাম</span>
+        <input value={name} onChange={(e) => setName(e.target.value)} className="input-pill" />
       </label>
       {message && (
         <p className={`text-sm ${message.type === "ok" ? "text-green-700" : "text-red-600"}`}>{message.text}</p>
       )}
-      <Button type="submit" size="sm" loading={loading}>
+      <Button type="submit" size="sm" variant="outline" loading={loading} className="min-h-11">
         সংরক্ষণ করুন
       </Button>
     </form>
   );
-  }
-                
+}

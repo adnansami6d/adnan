@@ -63,7 +63,7 @@ export default function RedeemForm() {
   return (
     <form onSubmit={submit} className="space-y-3" noValidate>
       <label className="block">
-        <span className="mb-1 block text-sm font-medium">রিডিম কোড</span>
+        <span className="mb-1.5 block text-sm font-semibold">রিডিম কোড</span>
         <input
           value={code}
           onChange={(e) => setCode(formatCode(e.target.value))}
@@ -71,17 +71,24 @@ export default function RedeemForm() {
           autoComplete="off"
           autoCapitalize="characters"
           spellCheck={false}
-          className="w-full rounded-lg border border-neutral-300 px-3 py-2 font-mono outline-none focus:border-neutral-900"
+          className="input-pill font-mono tracking-wider"
         />
       </label>
 
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      {success && <p role="status" className="rounded-lg bg-green-50 p-3 text-sm text-green-800">{success}</p>}
+      {error && (
+        <p role="alert" className="rounded-2xl bg-red-50 px-3 py-2.5 text-sm text-red-700">
+          {error}
+        </p>
+      )}
+      {success && (
+        <p role="status" className="rounded-2xl bg-green-50 px-3 py-2.5 text-sm text-green-800">
+          {success}
+        </p>
+      )}
 
-      <Button type="submit" loading={loading} className="w-full">
+      <Button type="submit" size="lg" loading={loading} className="w-full">
         কোড ব্যবহার করুন
       </Button>
     </form>
   );
-      }
-        
+}

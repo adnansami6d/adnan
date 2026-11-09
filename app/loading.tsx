@@ -1,12 +1,14 @@
-/** Shown automatically while any page is loading, so visitors always see that something is happening. */
+import { LoadingFrame, Skeleton, SkeletonPanel } from "@/components/Skeleton";
+
+/** Fallback loading screen for any page that has no loading.tsx of its own (milestone M1). */
 export default function Loading() {
   return (
-    <div role="status" aria-live="polite" className="mx-auto flex max-w-md flex-col items-center px-4 py-24">
-      <div className="fixed left-0 top-0 h-1 w-full overflow-hidden bg-neutral-100">
-        <div className="h-full w-1/2 animate-pulse bg-neutral-900" />
+    <LoadingFrame width="max-w-3xl">
+      <Skeleton className="h-8 w-1/2" />
+      <div className="mt-6 space-y-4">
+        <SkeletonPanel lines={3} />
+        <SkeletonPanel lines={2} />
       </div>
-      <div className="h-10 w-10 animate-spin rounded-full border-4 border-neutral-200 border-t-neutral-900" />
-      <p className="mt-4 text-sm text-neutral-600">লোড হচ্ছে, একটু অপেক্ষা করুন...</p>
-    </div>
+    </LoadingFrame>
   );
 }

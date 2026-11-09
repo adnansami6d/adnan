@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { clearCart, loadCoupon, saveCoupon, toOrderItems, useCart } from "@/lib/cart";
-import { taka } from "@/lib/format";
+import { coins, taka } from "@/lib/format";
 import { BD_DISTRICTS, placeOrderSchema } from "@/lib/validators";
 import Button, { buttonClasses } from "@/components/Button";
+import Balance from "@/components/Balance";
+import Coin from "@/components/Coin";
+import { LoadingFrame, Skeleton, SkeletonPanel } from "@/components/Skeleton";
 
 type OrderResult = {
   order_id: number;
@@ -21,13 +24,12 @@ type OrderResult = {
 
 type Validation = { valid: boolean; discount?: number; code?: string; message?: string };
 
-const inputClass =
-  "w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900";
+const inputClass = "input-pill";
 
 function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium">{label}</span>
+      <span className="mb-1.5 block text-sm font-semibold">{label}</span>
       {children}
       {error && <span className="mt-1 block text-sm text-red-600">{error}</span>}
     </label>
@@ -59,6 +61,8 @@ export default function CheckoutPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<{ code: string; message: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // blocks a second submit that arrives before React re-renders (e.g. pressing Enter twice quickly)
+  const submitLock = useRef(false);
   const [order, setOrder] = useState<OrderResult | null>(null);
 
   // load account data (prefill), delivery fees and the coupon chosen in the cart
@@ -159,7 +163,7 @@ export default function CheckoutPage() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (submitting) return;
+    if (submitting || submitLock.current) return;
     setError(null);
 
     const payload = {
@@ -186,6 +190,7 @@ export default function CheckoutPage() {
     }
     setFieldErrors({});
 
+    submitLock.current = true;
     setSubmitting(true);
     try {
       const res = await fetch("/api/orders", {
@@ -208,6 +213,7 @@ export default function CheckoutPage() {
     } catch {
       setError({ code: "NETWORK", message: "ইন্টারনেট সংযোগ চেক করে আবার চেষ্টা করুন।" });
     } finally {
+      submitLock.current = false;
       setSubmitting(false);
     }
   }
@@ -215,57 +221,67 @@ export default function CheckoutPage() {
   /* ---------------- success ---------------- */
   if (order) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-12">
-        <div className="rounded-lg border border-green-200 bg-green-50 p-6 text-center">
-          <h1 className="text-2xl font-bold text-green-800">অর্ডার সফল হয়েছে</h1>
-          <p className="mt-2 text-neutral-700">আপনার অর্ডার নম্বর</p>
-          <p className="mt-1 text-3xl font-bold tracking-wide">{order.order_number}</p>
-          <p className="mt-3 text-sm text-neutral-600">
+      <div className="mx-auto max-w-xl px-4 py-8 md:py-12">
+        <div className="card flex flex-col items-center gap-2 px-5 py-7 text-center">
+          <div className="icon-box h-16 w-16 !rounded-[22px] text-green-700" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m5 12.5 4.5 4.5L19 7.5" />
+            </svg>
+          </div>
+          <h1 className="mt-1.5 text-2xl font-bold text-green-800">অর্ডার সফল হয়েছে</h1>
+          <p className="text-neutral-600">আপনার অর্ডার নম্বর</p>
+          <p className="text-3xl font-bold tracking-wide">{order.order_number}</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-neutral-600">
             নম্বরটি সংরক্ষণ করুন। অর্ডার ট্র্যাক করতে এই নম্বর ও আপনার ফোন নম্বর লাগবে।
           </p>
         </div>
 
-        <dl className="mt-6 space-y-2 rounded-lg border border-neutral-200 p-4 text-sm">
-          <div className="flex justify-between">
+        <dl className="card-sm mt-5 space-y-2.5 p-5 text-[15px]">
+          <div className="flex justify-between gap-3">
             <dt className="text-neutral-600">সাবটোটাল</dt>
             <dd>{taka(order.subtotal)}</dd>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between gap-3">
             <dt className="text-neutral-600">ডেলিভারি চার্জ</dt>
             <dd>{taka(order.delivery_fee)}</dd>
           </div>
           {order.discount > 0 && (
-            <div className="flex justify-between text-green-700">
+            <div className="flex justify-between gap-3 text-green-700">
               <dt>ছাড়</dt>
               <dd>− {taka(order.discount)}</dd>
             </div>
           )}
-          <div className="flex justify-between border-t border-neutral-200 pt-2 font-semibold">
+          <div className="flex justify-between gap-3 border-t border-neutral-900/10 pt-3 font-bold">
             <dt>মোট</dt>
             <dd>{taka(order.total)}</dd>
           </div>
           {order.coin_used > 0 && (
-            <div className="flex justify-between">
+            <div className="flex items-center justify-between gap-3">
               <dt className="text-neutral-600">কয়েনে পরিশোধ</dt>
-              <dd>− {taka(order.coin_used)}</dd>
+              <dd className="inline-flex items-center gap-1.5">
+                − <Balance amount={order.coin_used} size="sm" />
+              </dd>
             </div>
           )}
-          <div className="flex justify-between text-base font-bold">
+          <div className="flex justify-between gap-3 text-[17px] font-bold">
             <dt>ডেলিভারির সময় দিতে হবে</dt>
             <dd>{taka(order.cod_due)}</dd>
           </div>
         </dl>
 
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link href="/products" className={buttonClasses("primary")}>
+        <div className="mt-5 flex flex-col gap-3">
+          <Link href="/products" className={buttonClasses("primary", "lg", "w-full")}>
             আরও কেনাকাটা করুন
           </Link>
           {loggedIn ? (
-            <Link href="/account/orders" className={buttonClasses("outline")}>
+            <Link href="/account/orders" className={buttonClasses("outline", "lg", "w-full")}>
               আমার অর্ডার
             </Link>
           ) : (
-            <Link href={`/track?order=${encodeURIComponent(order.order_number)}`} className={buttonClasses("outline")}>
+            <Link
+              href={`/track?order=${encodeURIComponent(order.order_number)}`}
+              className={buttonClasses("outline", "lg", "w-full")}
+            >
               অর্ডার ট্র্যাক করুন
             </Link>
           )}
@@ -276,33 +292,43 @@ export default function CheckoutPage() {
 
   /* ---------------- loading / empty ---------------- */
   if (!ready) {
-    return <div className="mx-auto max-w-4xl px-4 py-10 text-neutral-500">লোড হচ্ছে...</div>;
+    return (
+      <LoadingFrame width="max-w-5xl">
+        <Skeleton className="mb-6 h-8 w-36" />
+        <div className="grid gap-6 md:grid-cols-[1fr_340px] md:gap-8">
+          <SkeletonPanel lines={7} />
+          <SkeletonPanel lines={6} />
+        </div>
+      </LoadingFrame>
+    );
   }
 
   if (items.length === 0) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold">আপনার কার্ট খালি</h1>
-        <Link href="/products" className={`${buttonClasses("primary", "lg")} mt-6`}>
-          প্রোডাক্ট দেখুন
-        </Link>
+      <div className="mx-auto max-w-md px-4 py-16">
+        <div className="card p-8 text-center">
+          <h1 className="text-2xl font-bold">আপনার কার্ট খালি</h1>
+          <Link href="/products" className={buttonClasses("primary", "lg", "mt-6 w-full")}>
+            প্রোডাক্ট দেখুন
+          </Link>
+        </div>
       </div>
     );
   }
 
   /* ---------------- form ---------------- */
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold">চেকআউট</h1>
+    <div className="mx-auto max-w-5xl px-4 py-6 md:py-8">
+      <h1 className="mb-5 text-2xl font-bold">চেকআউট</h1>
 
-      <form onSubmit={submit} className="grid gap-8 md:grid-cols-[1fr_340px]" noValidate>
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">ডেলিভারির তথ্য</h2>
+      <form onSubmit={submit} className="grid gap-6 md:grid-cols-[1fr_340px] md:gap-8" noValidate>
+        <div className="card h-fit space-y-4 p-5">
+          <h2 className="text-lg font-bold">ডেলিভারির তথ্য</h2>
 
           {!loggedIn && (
-            <p className="rounded-lg bg-neutral-100 p-3 text-sm text-neutral-600">
+            <p className="card-sm p-3 text-sm leading-relaxed text-neutral-600">
               লগইন ছাড়াই অর্ডার করা যাবে (ক্যাশ অন ডেলিভারি)। কয়েন ব্যবহার করতে{" "}
-              <Link href="/login?next=/checkout" className="font-medium underline">
+              <Link href="/login?next=/checkout" className="font-semibold text-neutral-900 underline">
                 লগইন করুন
               </Link>
               ।
@@ -362,10 +388,10 @@ export default function CheckoutPage() {
           {fieldErrors.items && <p className="text-sm text-red-600">{fieldErrors.items}</p>}
         </div>
 
-        <aside className="h-fit space-y-4 rounded-lg border border-neutral-200 p-4 md:sticky md:top-24">
-          <h2 className="text-lg font-semibold">অর্ডারের সারাংশ</h2>
+        <aside className="card h-fit space-y-4 p-5 md:sticky md:top-24">
+          <h2 className="text-lg font-bold">অর্ডারের সারাংশ</h2>
 
-          <ul className="space-y-1 text-sm">
+          <ul className="space-y-1.5 text-sm">
             {items.map((i) => (
               <li key={i.variantId} className="flex justify-between gap-2">
                 <span className="min-w-0 flex-1 truncate">
@@ -376,83 +402,112 @@ export default function CheckoutPage() {
             ))}
           </ul>
 
-          <dl className="space-y-2 border-t border-neutral-200 pt-3 text-sm">
-            <div className="flex justify-between">
+          <dl className="space-y-2.5 border-t border-neutral-900/10 pt-3 text-[15px]">
+            <div className="flex justify-between gap-3">
               <dt className="text-neutral-600">সাবটোটাল</dt>
               <dd>{taka(subtotal)}</dd>
             </div>
             {coupon && discount > 0 && (
-              <div className="flex justify-between text-green-700">
+              <div className="flex justify-between gap-3 text-green-700">
                 <dt>কুপন ({coupon.code})</dt>
                 <dd>− {taka(discount)}</dd>
               </div>
             )}
-            <div className="flex justify-between">
+            <div className="flex justify-between gap-3">
               <dt className="text-neutral-600">ডেলিভারি চার্জ</dt>
               <dd>{deliveryFee === null ? "জেলা বাছাই করুন" : taka(deliveryFee)}</dd>
             </div>
-            <div className="flex justify-between border-t border-neutral-200 pt-2 font-semibold">
+            <div className="flex justify-between gap-3 border-t border-neutral-900/10 pt-3 text-[17px] font-bold">
               <dt>মোট</dt>
               <dd>{taka(total)}</dd>
             </div>
           </dl>
 
-          {/* coins */}
+          {/* coins: coin amounts always use the gold coin icon (<Balance>), money always uses ৳ */}
           {loggedIn ? (
-            <div className="rounded-lg bg-neutral-50 p-3 text-sm">
-              <p>
-                আপনার কয়েন: <strong>{balance}</strong> (১ কয়েন = ১ টাকা)
-              </p>
-              {balance > 0 ? (
-                <div className="mt-2 flex gap-2">
-                  <input
-                    value={coinInput}
-                    onChange={(e) => setCoinInput(e.target.value.replace(/[^0-9]/g, ""))}
-                    inputMode="numeric"
-                    placeholder="কয়েন ব্যবহার"
-                    className="min-w-0 flex-1 rounded-lg border border-neutral-300 px-3 py-1.5 outline-none focus:border-neutral-900"
-                  />
-                  <Button type="button" size="sm" variant="outline" onClick={() => setCoinInput(String(maxCoins))}>
-                    সব
-                  </Button>
+            <div className="card-sm space-y-3.5 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <Coin size={36} compact />
+                  <div>
+                    <div className="text-[13px] text-neutral-600">আপনার কয়েন</div>
+                    <div className="text-xl font-bold">{coins(balance)}</div>
+                  </div>
                 </div>
+                <span className="text-[13px] text-neutral-600">১ কয়েন = ১ টাকা</span>
+              </div>
+
+              {balance > 0 ? (
+                <>
+                  <div className="flex items-center gap-2.5">
+                    <input
+                      value={coinInput}
+                      onChange={(e) => setCoinInput(e.target.value.replace(/[^0-9]/g, ""))}
+                      inputMode="numeric"
+                      placeholder="কয়েন ব্যবহার"
+                      aria-label="কয়েন ব্যবহার"
+                      className="input-pill min-w-0 flex-1"
+                    />
+                    <Button type="button" size="sm" variant="outline" className="min-h-11" onClick={() => setCoinInput(String(maxCoins))}>
+                      সব
+                    </Button>
+                  </div>
+
+                  <dl className="space-y-2.5 text-[15px]">
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-neutral-600">মোট</dt>
+                      <dd>{taka(total)}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 text-green-700">
+                      <dt>কয়েনে কাটবে</dt>
+                      <dd className="inline-flex items-center gap-1.5">
+                        − <Balance amount={coinUse} size="sm" />
+                      </dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-neutral-600">কয়েন বাকি থাকবে</dt>
+                      <dd>
+                        <Balance amount={balance - coinUse} size="sm" />
+                      </dd>
+                    </div>
+                  </dl>
+                </>
               ) : (
-                <p className="mt-1 text-neutral-500">
-                  <Link href="/wallet" className="underline">
-                    ওয়ালেটে কয়েন যোগ করুন
-                  </Link>
-                </p>
+                <Link href="/wallet" className={buttonClasses("ghost", "sm", "min-h-11")}>
+                  ওয়ালেটে কয়েন যোগ করুন
+                </Link>
               )}
-              {coinUse > 0 && <p className="mt-2 text-green-700">কয়েনে কাটবে: {taka(coinUse)}</p>}
             </div>
           ) : null}
 
-          <div className="flex justify-between rounded-lg bg-neutral-900 px-3 py-2 font-bold text-white">
-            <span>ডেলিভারির সময় দিতে হবে</span>
-            <span>{taka(codDue)}</span>
+          <div className="flex items-center justify-between gap-3 rounded-[20px] bg-[linear-gradient(180deg,#2b2b2b,#0e0e0e)] px-4 py-3.5 text-white shadow-[0_12px_22px_-10px_rgba(0,0,0,0.55)]">
+            <span className="text-[15px] font-semibold">ডেলিভারির সময় দিতে হবে</span>
+            <span className="text-xl font-bold">{taka(codDue)}</span>
           </div>
 
-          <p className="text-xs text-neutral-500">
+          <p className="text-[13px] leading-relaxed text-neutral-600">
             পেমেন্ট: ক্যাশ অন ডেলিভারি{coinUse > 0 ? " (বাকি অংশ কয়েনে)" : ""}। চূড়ান্ত দাম অর্ডারের সময় সার্ভার হিসাব করে।
           </p>
 
           {error && (
-            <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+            <div role="alert" className="rounded-2xl bg-red-50 px-3 py-2.5 text-sm text-red-700">
               {error.message}
               {error.code === "OUT_OF_STOCK" && (
-                <Link href="/cart" className="ml-2 font-medium underline">
+                <Link href="/cart" className="ml-2 font-semibold underline">
                   কার্টে ফিরুন
                 </Link>
               )}
             </div>
           )}
 
-          <Button type="submit" size="lg" loading={submitting} className="w-full">
-            অর্ডার নিশ্চিত করুন
-          </Button>
-          <Link href="/cart" className={buttonClasses("ghost", "sm", "w-full")}>
-            ← কার্টে ফিরুন
-          </Link>
+          <div className="space-y-1.5">
+            <Button type="submit" size="lg" loading={submitting} className="w-full">
+              অর্ডার নিশ্চিত করুন
+            </Button>
+            <Link href="/cart" className={buttonClasses("ghost", "sm", "min-h-11 w-full")}>
+              ← কার্টে ফিরুন
+            </Link>
+          </div>
         </aside>
       </form>
     </div>

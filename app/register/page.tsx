@@ -7,7 +7,7 @@ import { authErrorMessage, safeNextPath } from "@/lib/auth";
 import { registerSchema } from "@/lib/validators";
 import Button from "@/components/Button";
 
-const inputClass = "w-full rounded-lg border border-neutral-300 px-3 py-2 outline-none focus:border-neutral-900";
+const inputClass = "input-pill";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -64,80 +64,92 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-12">
-      <h1 className="text-2xl font-bold">রেজিস্টার</h1>
-      <p className="mt-1 text-sm text-neutral-600">ফোন নম্বর ও ৪ সংখ্যার পিন দিয়ে অ্যাকাউন্ট খুলুন।</p>
-
-      <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium">আপনার নাম</span>
-          <input
-            type="text"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            autoComplete="name"
-            className={inputClass}
-          />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium">ফোন নম্বর</span>
-          <input
-            type="tel"
-            inputMode="numeric"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            autoComplete="tel"
-            placeholder="01XXXXXXXXX"
-            className={inputClass}
-          />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium">৪ সংখ্যার পিন</span>
-          <input
-            type="password"
-            inputMode="numeric"
-            maxLength={4}
-            value={pin}
-            onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-            autoComplete="new-password"
-            className={inputClass}
-          />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium">পিন আবার লিখুন</span>
-          <input
-            type="password"
-            inputMode="numeric"
-            maxLength={4}
-            value={pin2}
-            onChange={(e) => setPin2(e.target.value.replace(/\D/g, ""))}
-            autoComplete="new-password"
-            className={inputClass}
-          />
-        </label>
-
-        <p className="text-xs text-neutral-500">
-          পিন মনে রাখুন। ভুলে গেলে সাপোর্টের সাথে যোগাযোগ করতে হবে।
+    <div className="mx-auto max-w-md px-4 py-10">
+      <div className="card p-6 sm:p-8">
+        <div className="icon-box mx-auto h-16 w-16" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="8" r="3.6" />
+            <path d="M5 20c.6-3.6 3.4-5.6 7-5.6s6.4 2 7 5.6" />
+          </svg>
+        </div>
+        <h1 className="mt-4 text-center text-2xl font-bold">রেজিস্টার</h1>
+        <p className="mt-1 text-center text-sm leading-relaxed text-neutral-600">
+          ফোন নম্বর ও ৪ সংখ্যার পিন দিয়ে অ্যাকাউন্ট খুলুন।
         </p>
 
-        {error && (
-          <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
-            {error}
-          </p>
-        )}
+        <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-semibold">আপনার নাম</span>
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              autoComplete="name"
+              className={inputClass}
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-semibold">ফোন নম্বর</span>
+            <input
+              type="tel"
+              inputMode="numeric"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              autoComplete="tel"
+              placeholder="01XXXXXXXXX"
+              className={inputClass}
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-semibold">৪ সংখ্যার পিন</span>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={4}
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+              autoComplete="new-password"
+              className={`${inputClass} text-center text-2xl tracking-[0.5em]`}
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-semibold">পিন আবার লিখুন</span>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={4}
+              value={pin2}
+              onChange={(e) => setPin2(e.target.value.replace(/\D/g, ""))}
+              autoComplete="new-password"
+              className={`${inputClass} text-center text-2xl tracking-[0.5em]`}
+            />
+          </label>
 
-        <Button type="submit" size="lg" loading={loading} className="w-full">
-          অ্যাকাউন্ট খুলুন
-        </Button>
-      </form>
+          <p className="text-[13px] leading-relaxed text-neutral-600">
+            পিন মনে রাখুন। ভুলে গেলে সাপোর্টের সাথে যোগাযোগ করতে হবে।
+          </p>
+
+          {error && (
+            <p role="alert" className="rounded-2xl bg-red-50 px-3 py-2.5 text-sm text-red-700">
+              {error}
+            </p>
+          )}
+
+          <Button type="submit" size="lg" loading={loading} className="w-full">
+            অ্যাকাউন্ট খুলুন
+          </Button>
+        </form>
+      </div>
 
       <p className="mt-6 text-center text-sm text-neutral-600">
         আগেই অ্যাকাউন্ট আছে?{" "}
-        <Link href={next !== "/account" ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="font-medium underline">
+        <Link
+          href={next !== "/account" ? `/login?next=${encodeURIComponent(next)}` : "/login"}
+          className="font-semibold text-neutral-900 underline"
+        >
           লগইন করুন
         </Link>
       </p>
     </div>
   );
-         }
-  
+}

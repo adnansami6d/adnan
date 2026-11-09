@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/format";
+import Balance from "@/components/Balance";
 import TopupForm from "@/components/TopupForm";
 import RedeemForm from "@/components/RedeemForm";
 
@@ -32,8 +33,9 @@ export default async function WalletPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/wallet");
 
-  const [{ data: wallet }, { data: ledger }, { data: topups }] = await Promise.all([
+  const [{ data: wallet }, { data: profile }, { data: ledger }, { data: topups }] = await Promise.all([
     supabase.from("wallets").select("balance").eq("user_id", user.id).maybeSingle(),
+    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
     supabase
       .from("wallet_ledger")
       .select("id, amount, balance_after, type, note, created_at")
@@ -57,10 +59,10 @@ export default async function WalletPage() {
         </Link>
       </div>
 
-      <section className="rounded-lg border border-neutral-200 p-4 text-center">
-        <div className="text-sm text-neutral-600">কয়েন ব্যালান্স</div>
-        <div className="mt-1 text-3xl font-bold">{(wallet?.balance ?? 0).toLocaleString("en-US")}</div>
-        <div className="text-xs text-neutral-500">১ কয়েন = ১ টাকা</div>
+      <section className="card p-6 text-center">
+        <div className="mb-3 text-sm text-neutral-600">কয়েন ব্যালান্স</div>
+        <Balance amount={wallet?.balance ?? 0} size="lg" name={profile?.full_name} />
+        <div className="mt-3 text-xs text-neutral-500">১ কয়েন = ১ টাকা</div>
       </section>
 
       <section className="rounded-lg border border-neutral-200 p-4">

@@ -92,13 +92,13 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       </p>
 
       {error && (
-        <p className="rounded-lg bg-red-50 p-4 text-sm text-red-700">
+        <p className="rounded-2xl bg-red-50 p-4 text-sm text-red-700">
           প্রোডাক্ট লোড করা যায়নি। ({error})
         </p>
       )}
 
       {!error && products.length === 0 && (
-        <div className="rounded-lg border border-dashed border-neutral-300 p-10 text-center text-neutral-500">
+        <div className="card-sm p-10 text-center text-neutral-500">
           কোনো প্রোডাক্ট পাওয়া যায়নি।
           <div className="mt-4">
             <Link href="/products" className={buttonClasses("outline", "sm")}>
@@ -138,4 +138,3 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     </div>
   );
              }
-      

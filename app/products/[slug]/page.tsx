@@ -89,7 +89,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       />
 
       {product.description && (
-        <section className="mt-10 max-w-2xl">
+        <section className="card-sm mt-10 max-w-2xl p-5">
           <h2 className="mb-2 text-lg font-semibold">বিবরণ</h2>
           <p className="whitespace-pre-line text-neutral-700">{product.description}</p>
         </section>
@@ -97,4 +97,3 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     </div>
   );
 }
-  

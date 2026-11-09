@@ -2,6 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import CartLink from "./CartLink";
 import LogoutButton from "./LogoutButton";
+import NavMenu from "./NavMenu";
+import Balance from "./Balance";
 
 type SessionInfo = { loggedIn: boolean; isAdmin: boolean; coins: number };
 
@@ -30,38 +32,36 @@ async function getSessionInfo(): Promise<SessionInfo> {
   }
 }
 
-const linkClass = "rounded-lg px-3 py-2 hover:bg-neutral-100";
+// plain text links: no shadow, no border (only real buttons look raised)
+const linkClass = "rounded-xl px-3 py-2 text-neutral-700 hover:bg-black/5 hover:text-neutral-900";
 
+/**
+ * Header (milestone M3). Phone: ONE line = [☰] Taz Fashion ... [cart] [coins]; everything else is inside the ☰ menu.
+ * Desktop (md and up): logo, search and links are shown directly.
+ */
 export default async function Navbar() {
   const { loggedIn, isAdmin, coins } = await getSessionInfo();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-        <Link href="/" className="text-xl font-bold tracking-tight">
+    <header className="sticky top-0 z-40 px-3 pt-3">
+      <div className="card-sm relative mx-auto flex max-w-6xl items-center gap-2 px-3 py-2">
+        <NavMenu loggedIn={loggedIn} isAdmin={isAdmin} />
+
+        <Link href="/" className="whitespace-nowrap text-lg font-bold tracking-tight">
           Taz Fashion
         </Link>
 
-        {/* search: sends the visitor to /products?q=... */}
-        <form action="/products" method="get" className="order-last w-full sm:order-none sm:ml-4 sm:w-auto sm:flex-1 sm:max-w-md">
-          <input
-            type="search"
-            name="q"
-            placeholder="প্রোডাক্ট খুঁজুন..."
-            className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
-          />
+        {/* search: only on wide screens (on phones it is inside the ☰ menu) */}
+        <form action="/products" method="get" className="ml-4 hidden max-w-md flex-1 md:block">
+          <input type="search" name="q" placeholder="প্রোডাক্ট খুঁজুন..." className="input-pill py-2 text-sm" />
         </form>
 
-        <nav className="ml-auto flex flex-wrap items-center text-sm">
+        <nav className="ml-auto hidden items-center text-sm md:flex">
           <Link href="/products" className={linkClass}>
             প্রোডাক্ট
           </Link>
-          <CartLink />
           {loggedIn ? (
             <>
-              <Link href="/wallet" className={linkClass}>
-                কয়েন: {coins}
-              </Link>
               <Link href="/account" className={linkClass}>
                 অ্যাকাউন্ট
               </Link>
@@ -83,8 +83,17 @@ export default async function Navbar() {
             </>
           )}
         </nav>
+
+        {/* always visible: cart and coins */}
+        <div className="ml-auto flex items-center gap-2 md:ml-2">
+          <CartLink />
+          {loggedIn && (
+            <Link href="/wallet" className="btn btn-secondary btn-sm" aria-label="আমার ওয়ালেট">
+              <Balance amount={coins} size="sm" />
+            </Link>
+          )}
+        </div>
       </div>
     </header>
   );
-      }
-    
+}

@@ -26,8 +26,14 @@ export default async function HomePage() {
 
   return (
     <div>
-      <section className="bg-neutral-100">
-        <div className="mx-auto max-w-6xl px-4 py-14 text-center sm:py-20">
+      <section className="px-3 pt-4">
+        <div className="card mx-auto max-w-6xl px-6 py-12 text-center sm:py-20">
+          <span className="icon-box mb-5 h-16 w-16" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#111" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 7h12l-1 13H7L6 7Z" />
+              <path d="M9 9V6a3 3 0 0 1 6 0v3" />
+            </svg>
+          </span>
           <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
             আপনার পছন্দের পোশাক, দরজায় পৌঁছে যাবে
           </h1>
@@ -46,7 +52,7 @@ export default async function HomePage() {
         <h2 className="mb-6 text-2xl font-bold">জনপ্রিয় প্রোডাক্ট</h2>
 
         {error && (
-          <p className="rounded-lg bg-red-50 p-4 text-sm text-red-700">
+          <p className="rounded-2xl bg-red-50 p-4 text-sm text-red-700">
             প্রোডাক্ট লোড করা যায়নি। ({error})
           </p>
         )}
@@ -64,4 +70,3 @@ export default async function HomePage() {
     </div>
   );
         }
-      

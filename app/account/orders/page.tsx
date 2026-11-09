@@ -7,6 +7,7 @@ import { formatDate, taka } from "@/lib/format";
 import { StatusBadge, StatusSteps } from "@/components/OrderStatus";
 import CancelOrderButton from "@/components/CancelOrderButton";
 import { buttonClasses } from "@/components/Button";
+import Balance from "@/components/Balance";
 
 export const metadata: Metadata = { title: "আমার অর্ডার" };
 
@@ -51,36 +52,36 @@ export default async function MyOrdersPage() {
   const orders = (data ?? []) as unknown as Order[];
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="mx-auto max-w-3xl px-4 py-6 md:py-8">
+      <div className="mb-5 flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">আমার অর্ডার</h1>
-        <Link href="/account" className="text-sm underline">
+        <Link href="/account" className={buttonClasses("ghost", "sm", "min-h-11")}>
           অ্যাকাউন্ট
         </Link>
       </div>
 
       {error && (
-        <p className="rounded-lg bg-red-50 p-4 text-sm text-red-700">অর্ডার লোড করা যায়নি। ({error.message})</p>
+        <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">অর্ডার লোড করা যায়নি। ({error.message})</p>
       )}
 
       {!error && orders.length === 0 && (
-        <div className="rounded-lg border border-dashed border-neutral-300 p-10 text-center text-neutral-500">
+        <div className="card p-10 text-center text-neutral-600">
           আপনি এখনো কোনো অর্ডার করেননি।
           <div className="mt-4">
-            <Link href="/products" className={buttonClasses("primary", "md")}>
+            <Link href="/products" className={buttonClasses("primary", "lg")}>
               প্রোডাক্ট দেখুন
             </Link>
           </div>
         </div>
       )}
 
-      <ul className="space-y-6">
+      <ul className="space-y-5">
         {orders.map((o) => (
-          <li key={o.id} className="rounded-lg border border-neutral-200 p-4">
+          <li key={o.id} className="card p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="font-semibold">{o.order_number}</p>
-                <p className="text-sm text-neutral-500">{formatDate(o.created_at)}</p>
+                <p className="font-bold">{o.order_number}</p>
+                <p className="text-sm text-neutral-600">{formatDate(o.created_at)}</p>
               </div>
               <StatusBadge status={o.status} />
             </div>
@@ -89,10 +90,10 @@ export default async function MyOrdersPage() {
               <StatusSteps status={o.status} />
             </div>
 
-            <ul className="divide-y divide-neutral-100">
+            <ul className="divide-y divide-neutral-900/10">
               {o.order_items.map((it, idx) => (
-                <li key={idx} className="flex gap-3 py-2">
-                  <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded bg-neutral-100">
+                <li key={idx} className="flex gap-3 py-2.5">
+                  <div className="relative h-16 w-14 shrink-0 overflow-hidden rounded-xl bg-neutral-100 shadow-[inset_0_2px_6px_rgba(15,23,42,0.09)]">
                     {it.image_url && (
                       <Image
                         src={it.image_url}
@@ -105,45 +106,47 @@ export default async function MyOrdersPage() {
                     )}
                   </div>
                   <div className="min-w-0 flex-1 text-sm">
-                    <p className="line-clamp-1 font-medium">{it.product_name}</p>
-                    <p className="text-neutral-500">
+                    <p className="line-clamp-1 font-semibold">{it.product_name}</p>
+                    <p className="text-neutral-600">
                       {it.size} · {it.color} · × {it.quantity}
                     </p>
                   </div>
-                  <p className="text-sm">{taka(it.unit_price * it.quantity)}</p>
+                  <p className="text-sm font-medium">{taka(it.unit_price * it.quantity)}</p>
                 </li>
               ))}
             </ul>
 
-            <dl className="mt-3 space-y-1 border-t border-neutral-100 pt-3 text-sm">
-              <div className="flex justify-between">
+            <dl className="mt-3 space-y-2 border-t border-neutral-900/10 pt-3 text-sm">
+              <div className="flex justify-between gap-3">
                 <dt className="text-neutral-600">সাবটোটাল</dt>
                 <dd>{taka(o.subtotal)}</dd>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-3">
                 <dt className="text-neutral-600">ডেলিভারি চার্জ</dt>
                 <dd>{taka(o.delivery_fee)}</dd>
               </div>
               {o.discount > 0 && (
-                <div className="flex justify-between text-green-700">
+                <div className="flex justify-between gap-3 text-green-700">
                   <dt>ছাড়</dt>
                   <dd>− {taka(o.discount)}</dd>
                 </div>
               )}
               {o.coin_used > 0 && (
-                <div className="flex justify-between">
+                <div className="flex items-center justify-between gap-3">
                   <dt className="text-neutral-600">কয়েনে পরিশোধ</dt>
-                  <dd>− {taka(o.coin_used)}</dd>
+                  <dd className="inline-flex items-center gap-1.5">
+                    − <Balance amount={o.coin_used} size="sm" />
+                  </dd>
                 </div>
               )}
-              <div className="flex justify-between font-semibold">
+              <div className="flex justify-between gap-3 text-base font-bold">
                 <dt>মোট</dt>
                 <dd>{taka(o.total)}</dd>
               </div>
               {o.status !== "cancelled" && (
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-3">
                   <dt className="text-neutral-600">ডেলিভারির সময় দিতে হবে</dt>
-                  <dd>{taka(o.cod_due)}</dd>
+                  <dd className="font-semibold">{taka(o.cod_due)}</dd>
                 </div>
               )}
             </dl>
@@ -158,5 +161,4 @@ export default async function MyOrdersPage() {
       </ul>
     </div>
   );
-    }
-          
+}

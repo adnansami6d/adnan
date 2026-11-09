@@ -20,8 +20,11 @@ export default function ProductCard({ product }: { product: ProductSummary }) {
   const onSale = product.compare_price !== null && product.compare_price > product.base_price;
 
   return (
-    <Link href={`/products/${product.slug}`} className="group block">
-      <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-neutral-100">
+    <Link
+      href={`/products/${product.slug}`}
+      className="group card-sm block overflow-hidden transition-transform duration-150 active:scale-[0.98]"
+    >
+      <div className="relative aspect-[4/5] overflow-hidden bg-neutral-100">
         {img && (
           <Image
             src={img.url}
@@ -34,12 +37,13 @@ export default function ProductCard({ product }: { product: ProductSummary }) {
           />
         )}
         {onSale && (
-          <span className="absolute left-2 top-2 rounded bg-red-600 px-2 py-0.5 text-xs font-medium text-white">
+          <span className="absolute left-2 top-2 rounded-full bg-red-600 px-2.5 py-0.5 text-xs font-semibold text-white shadow">
             সেল
           </span>
         )}
       </div>
-      <h3 className="mt-2 line-clamp-1 font-medium">{product.name}</h3>
+      <div className="px-3 pb-3 pt-2.5">
+      <h3 className="line-clamp-1 font-medium">{product.name}</h3>
       <p className="text-sm">
         <span className="font-semibold">{taka(product.base_price)}</span>
         {onSale && (
@@ -48,6 +52,7 @@ export default function ProductCard({ product }: { product: ProductSummary }) {
           </span>
         )}
       </p>
+      </div>
     </Link>
   );
 }

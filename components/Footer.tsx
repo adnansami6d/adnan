@@ -6,8 +6,9 @@ const facebook = process.env.NEXT_PUBLIC_FACEBOOK_URL;
 
 export default function Footer() {
   return (
-    <footer className="mt-16 border-t border-neutral-200 bg-neutral-50">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-3">
+    <footer className="mx-auto mt-16 w-full max-w-6xl px-3 pb-4">
+      <div className="card overflow-hidden">
+      <div className="grid gap-8 px-6 py-8 sm:grid-cols-3">
         <div>
           <p className="text-lg font-bold">Taz Fashion</p>
           <p className="mt-2 text-sm text-neutral-600">
@@ -56,9 +57,10 @@ export default function Footer() {
           </ul>
         </div>
       </div>
-      <p className="border-t border-neutral-200 py-4 text-center text-xs text-neutral-500">
+      <p className="border-t border-black/5 py-4 text-center text-xs text-neutral-500">
         © {new Date().getFullYear()} Taz Fashion. সর্বস্বত্ব সংরক্ষিত।
       </p>
+      </div>
     </footer>
   );
       }

@@ -57,6 +57,7 @@ export default function ProductPurchase({ product, variants, images }: Props) {
   const [qty, setQty] = useState(1);
   const [imgIndex, setImgIndex] = useState(0);
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+  const [buying, setBuying] = useState(false); // true while moving to checkout (spinner on the button)
 
   const sizes = useMemo(
     () =>
@@ -122,6 +123,8 @@ export default function ProductPurchase({ product, variants, images }: Props) {
     );
 
     if (goCheckout) {
+      setBuying(true);
+      window.setTimeout(() => setBuying(false), 8000); // safety: never stay locked if the page did not change
       router.push("/checkout");
     } else {
       setMessage({ type: "ok", text: "কার্টে যোগ হয়েছে।" });
@@ -129,14 +132,14 @@ export default function ProductPurchase({ product, variants, images }: Props) {
   }
 
   if (variants.length === 0) {
-    return <p className="rounded-lg bg-neutral-100 p-4 text-neutral-600">এই প্রোডাক্ট এখন পাওয়া যাচ্ছে না।</p>;
+    return <p className="card-sm p-4 text-neutral-600">এই প্রোডাক্ট এখন পাওয়া যাচ্ছে না।</p>;
   }
 
   return (
     <div className="grid gap-8 md:grid-cols-2">
       {/* Gallery */}
       <div>
-        <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-neutral-100">
+        <div className="card-sm relative aspect-[4/5] overflow-hidden">
           {currentImage && (
             <Image
               src={currentImage.url}
@@ -157,8 +160,8 @@ export default function ProductPurchase({ product, variants, images }: Props) {
                 type="button"
                 onClick={() => setImgIndex(i)}
                 aria-label={`ছবি ${i + 1}`}
-                className={`relative aspect-square overflow-hidden rounded border-2 ${
-                  i === imgIndex ? "border-neutral-900" : "border-transparent"
+                className={`relative aspect-square overflow-hidden rounded-xl border-2 transition-transform active:scale-95 ${
+                  i === imgIndex ? "border-neutral-900" : "border-white"
                 }`}
               >
                 <Image
@@ -177,7 +180,7 @@ export default function ProductPurchase({ product, variants, images }: Props) {
 
       {/* Choices */}
       <div>
-        <p className="text-2xl font-bold">
+        <p className="text-3xl font-bold">
           {taka(price)}
           {onSale && (
             <span className="ml-3 text-lg font-normal text-neutral-400 line-through">
@@ -190,23 +193,21 @@ export default function ProductPurchase({ product, variants, images }: Props) {
           <p className="mb-2 text-sm font-medium">রং: {color}</p>
           <div className="flex flex-wrap gap-2">
             {colors.map((c) => (
-              <button
+              <Button
                 key={c.name}
-                type="button"
+                size="sm"
+                variant={c.name === color ? "primary" : "outline"}
                 onClick={() => pickColor(c.name)}
                 aria-pressed={c.name === color}
-                className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm ${
-                  c.name === color ? "border-neutral-900 bg-neutral-50" : "border-neutral-300"
-                }`}
               >
                 {c.hex && (
                   <span
-                    className="inline-block h-4 w-4 rounded-full border border-neutral-300"
+                    className="inline-block h-4 w-4 rounded-full border border-neutral-400"
                     style={{ backgroundColor: c.hex }}
                   />
                 )}
                 {c.name}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -217,18 +218,17 @@ export default function ProductPurchase({ product, variants, images }: Props) {
             {sizes.map((v) => {
               const out = v.stock < 1;
               return (
-                <button
+                <Button
                   key={v.id}
-                  type="button"
+                  size="sm"
+                  variant={v.size === size ? "primary" : "outline"}
                   disabled={out}
                   onClick={() => pickSize(v.size)}
                   aria-pressed={v.size === size}
-                  className={`min-w-12 rounded-lg border px-3 py-1.5 text-sm ${
-                    v.size === size ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300"
-                  } ${out ? "cursor-not-allowed text-neutral-300 line-through" : ""}`}
+                  className={`min-w-12 ${out ? "line-through" : ""}`}
                 >
                   {v.size}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -245,33 +245,37 @@ export default function ProductPurchase({ product, variants, images }: Props) {
 
         <div className="mt-6">
           <p className="mb-2 text-sm font-medium">পরিমাণ</p>
-          <div className="inline-flex items-center rounded-lg border border-neutral-300">
-            <button
-              type="button"
-              className="px-3 py-2 disabled:opacity-40"
+          <div className="inline-flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="md"
+              className="w-11 px-0 text-xl"
               disabled={qty <= 1}
               onClick={() => setQty((q) => Math.max(1, q - 1))}
               aria-label="কমান"
             >
               −
-            </button>
-            <span className="min-w-10 text-center">{qty}</span>
-            <button
-              type="button"
-              className="px-3 py-2 disabled:opacity-40"
+            </Button>
+            <span className="min-w-12 rounded-2xl bg-neutral-100 py-2.5 text-center text-lg font-semibold shadow-[var(--shadow-inset)]">
+              {qty}
+            </span>
+            <Button
+              variant="outline"
+              size="md"
+              className="w-11 px-0 text-xl"
               disabled={qty >= maxQty}
               onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
               aria-label="বাড়ান"
             >
               +
-            </button>
+            </Button>
           </div>
         </div>
 
         {message && (
           <p
             role="status"
-            className={`mt-4 rounded-lg p-3 text-sm ${
+            className={`mt-4 rounded-2xl p-3 text-sm ${
               message.type === "ok" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-700"
             }`}
           >
@@ -285,10 +289,10 @@ export default function ProductPurchase({ product, variants, images }: Props) {
         )}
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button size="lg" onClick={() => add(false)} className="flex-1">
+          <Button size="lg" onClick={() => add(false)} disabled={buying} className="flex-1">
             কার্টে যোগ করুন
           </Button>
-          <Button size="lg" variant="outline" onClick={() => add(true)} className="flex-1">
+          <Button size="lg" variant="outline" onClick={() => add(true)} loading={buying} className="flex-1">
             এখনই কিনুন
           </Button>
         </div>
@@ -300,4 +304,3 @@ export default function ProductPurchase({ product, variants, images }: Props) {
     </div>
   );
   }
-  

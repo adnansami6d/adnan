@@ -6,6 +6,7 @@ import { formatDate } from "@/lib/format";
 import Balance from "@/components/Balance";
 import TopupForm from "@/components/TopupForm";
 import RedeemForm from "@/components/RedeemForm";
+import { buttonClasses } from "@/components/Button";
 
 export const metadata: Metadata = { title: "আমার ওয়ালেট" };
 export const dynamic = "force-dynamic";
@@ -51,10 +52,10 @@ export default async function WalletPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 px-4 py-8">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-2xl space-y-5 px-4 py-6 md:py-8">
+      <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">আমার ওয়ালেট</h1>
-        <Link href="/account" className="text-sm underline">
+        <Link href="/account" className={buttonClasses("ghost", "sm", "min-h-11")}>
           ← অ্যাকাউন্ট
         </Link>
       </div>
@@ -62,35 +63,35 @@ export default async function WalletPage() {
       <section className="card p-6 text-center">
         <div className="mb-3 text-sm text-neutral-600">কয়েন ব্যালান্স</div>
         <Balance amount={wallet?.balance ?? 0} size="lg" name={profile?.full_name} />
-        <div className="mt-3 text-xs text-neutral-500">১ কয়েন = ১ টাকা</div>
+        <div className="mt-3 text-xs text-neutral-600">১ কয়েন = ১ টাকা</div>
       </section>
 
-      <section className="rounded-lg border border-neutral-200 p-4">
-        <h2 className="mb-3 font-semibold">টাকা পাঠিয়ে কয়েন নিন</h2>
+      <section className="card p-5">
+        <h2 className="mb-4 text-lg font-bold">টাকা পাঠিয়ে কয়েন নিন</h2>
         <TopupForm />
       </section>
 
-      <section className="rounded-lg border border-neutral-200 p-4">
-        <h2 className="mb-3 font-semibold">রিডিম কোড</h2>
+      <section className="card p-5">
+        <h2 className="mb-4 text-lg font-bold">রিডিম কোড</h2>
         <RedeemForm />
       </section>
 
       {(topups ?? []).length > 0 && (
         <section>
-          <h2 className="mb-2 font-semibold">আমার টপআপ অনুরোধ</h2>
-          <ul className="divide-y divide-neutral-200 rounded-lg border border-neutral-200 text-sm">
+          <h2 className="mb-2 text-lg font-bold">আমার টপআপ অনুরোধ</h2>
+          <ul className="card-sm divide-y divide-neutral-900/10 text-sm">
             {(topups ?? []).map((t) => {
               const s = STATUS_LABEL[t.status] ?? { text: t.status, cls: "" };
               return (
-                <li key={t.id} className="flex items-center justify-between gap-3 p-3">
+                <li key={t.id} className="flex items-center justify-between gap-3 p-4">
                   <div>
-                    <div className="font-medium">
+                    <div className="font-semibold">
                       {t.amount} টাকা · {METHOD[t.method] ?? t.method}
                     </div>
-                    <div className="text-xs text-neutral-500">{formatDate(t.created_at)}</div>
+                    <div className="text-xs text-neutral-600">{formatDate(t.created_at)}</div>
                     {t.admin_note && <div className="text-xs text-neutral-600">নোট: {t.admin_note}</div>}
                   </div>
-                  <span className={`text-xs font-medium ${s.cls}`}>{s.text}</span>
+                  <span className={`text-xs font-semibold ${s.cls}`}>{s.text}</span>
                 </li>
               );
             })}
@@ -99,23 +100,22 @@ export default async function WalletPage() {
       )}
 
       <section>
-        <h2 className="mb-2 font-semibold">লেনদেনের ইতিহাস</h2>
+        <h2 className="mb-2 text-lg font-bold">লেনদেনের ইতিহাস</h2>
         {(ledger ?? []).length === 0 ? (
           <p className="text-sm text-neutral-600">এখনো কোনো লেনদেন নেই।</p>
         ) : (
-          <ul className="divide-y divide-neutral-200 rounded-lg border border-neutral-200 text-sm">
+          <ul className="card-sm divide-y divide-neutral-900/10 text-sm">
             {(ledger ?? []).map((l) => (
-              <li key={l.id} className="flex items-center justify-between gap-3 p-3">
+              <li key={l.id} className="flex items-center justify-between gap-3 p-4">
                 <div>
-                  <div className="font-medium">{TYPE_LABEL[l.type] ?? l.type}</div>
-                  <div className="text-xs text-neutral-500">{formatDate(l.created_at)}</div>
+                  <div className="font-semibold">{TYPE_LABEL[l.type] ?? l.type}</div>
+                  <div className="text-xs text-neutral-600">{formatDate(l.created_at)}</div>
                 </div>
-                <div className="text-right">
-                  <div className={`font-semibold ${l.amount > 0 ? "text-green-700" : "text-red-700"}`}>
-                    {l.amount > 0 ? "+" : ""}
-                    {l.amount}
+                <div className="flex flex-col items-end gap-0.5">
+                  <Balance amount={l.amount} size="sm" sign />
+                  <div className="flex items-center gap-1.5 text-xs text-neutral-600">
+                    ব্যালান্স: <Balance amount={l.balance_after} size="sm" className="text-neutral-600" />
                   </div>
-                  <div className="text-xs text-neutral-500">ব্যালান্স: {l.balance_after}</div>
                 </div>
               </li>
             ))}

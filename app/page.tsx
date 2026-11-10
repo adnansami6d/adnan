@@ -1,7 +1,5 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import ProductCard, { PRODUCT_SUMMARY_SELECT, type ProductSummary } from "@/components/ProductCard";
-import { buttonClasses } from "@/components/Button";
 
 async function getFeaturedProducts(): Promise<{ products: ProductSummary[]; error: string | null }> {
   try {
@@ -26,29 +24,7 @@ export default async function HomePage() {
 
   return (
     <div>
-      <section className="px-3 pt-4">
-        <div className="card mx-auto max-w-6xl px-6 py-12 text-center sm:py-20">
-          <span className="icon-box mb-5 h-16 w-16" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#111" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6 7h12l-1 13H7L6 7Z" />
-              <path d="M9 9V6a3 3 0 0 1 6 0v3" />
-            </svg>
-          </span>
-          <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
-            আপনার পছন্দের পোশাক, দরজায় পৌঁছে যাবে
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-neutral-600">
-            টি-শার্ট ও হুডি। ক্যাশ অন ডেলিভারি, সারা বাংলাদেশে ডেলিভারি।
-          </p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/products" className={buttonClasses("primary", "lg")}>
-              সব প্রোডাক্ট দেখুন
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 py-12">
+      <section className="mx-auto max-w-6xl px-4 pb-12 pt-6">
         <h2 className="mb-6 text-2xl font-bold">জনপ্রিয় প্রোডাক্ট</h2>
 
         {error && (
@@ -69,4 +45,4 @@ export default async function HomePage() {
       </section>
     </div>
   );
-        }
+}

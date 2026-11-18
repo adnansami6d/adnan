@@ -1,33 +1,28 @@
 /* ==========================================================
    Game Bazz — location.js
    ব্যবহারকারীর কাছ থেকে লোকেশনের অনুমতি নেয় এবং এলাকা
-   Firebase Firestore-এর "visitors" কালেকশনে জমা রাখে।
+   SheetDB (Google Sheet)-এ জমা রাখে। Firebase লাগে না।
 
    এজেন্টের প্রচার-লিংক: https://আপনার-সাইট/?agent=rahim
    (agent নামটি একবার সেভ হয়ে যায়, তাই পরে রুম লিংকে ঢুকলেও মনে থাকে)
+
+   Google Sheet-এর প্রথম সারিতে (header) এই কলামগুলো থাকতে হবে:
+   device_id | agent | lat | lng | accuracy | area | district | country | first_seen | last_seen | visits
    ========================================================== */
 (() => {
   'use strict';
 
-  const firebaseConfig = {
-    apiKey: "PASTE_FULL_API_KEY_HERE",
-    authDomain: "chat-70f4c.firebaseapp.com",
-    projectId: "chat-70f4c",
-    storageBucket: "chat-70f4c.firebasestorage.app",
-    messagingSenderId: "984842293346",
-    appId: "PASTE_APP_ID_FROM_FIREBASE_CONSOLE"
-  };
-
-  const COLLECTION = 'visitors';
+  const SHEETDB_URL = 'https://sheetdb.io/api/v1/3x1krz6d5rpn6';
   const ASK_AGAIN_MS = 24 * 60 * 60 * 1000;   // "Not now" চাপলে ২৪ ঘণ্টা আর জিজ্ঞেস করবে না
-  const KEY = { device: 'gb_device', agent: 'gb_agent', ask: 'gb_loc_ask', sent: 'gb_loc_sent' };
+  const KEY = { device: 'gb_device', agent: 'gb_agent', ask: 'gb_loc_ask' };
+  const JSON_HEADERS = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
 
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} }
   };
 
-  if (!window.firebase || !navigator.geolocation) return;
+  if (!navigator.geolocation) return;
 
   /* ---------- এজেন্ট ও ডিভাইস ---------- */
   try {
@@ -44,16 +39,7 @@
     store.set(KEY.device, deviceId);
   }
 
-  let db;
-  try {
-    firebase.initializeApp(firebaseConfig);
-    db = firebase.firestore();
-  } catch (err) {
-    console.warn('Firebase init failed', err);
-    return;
-  }
-
-  /* ---------- লোকেশন নেওয়া ও সেভ ---------- */
+  /* ---------- লোকেশন নেওয়া ---------- */
   function getPosition() {
     return new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(resolve, reject, {
@@ -80,30 +66,58 @@
     }
   }
 
+  /* ---------- SheetDB-এ সেভ ---------- */
+  // এই ডিভাইসের আগের সারি আছে কি না দেখে (থাকলে null আর না থাকলে null-ই দেয়)
+  async function findRow() {
+    try {
+      const r = await fetch(SHEETDB_URL + '/search?device_id=' + encodeURIComponent(deviceId),
+        { headers: { 'Accept': 'application/json' } });
+      if (!r.ok) return null;
+      const rows = await r.json();
+      return Array.isArray(rows) && rows.length ? rows[0] : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   async function capture() {
     try {
       const pos = await getPosition();
-      // ব্রাউজার যা দেয় সেটাই পুরো নির্ভুলতায় জমা হয়
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
       const place = await areaName(lat, lng);
-      const ts = firebase.firestore.FieldValue.serverTimestamp();
+      const now = new Date().toISOString();
 
       const data = {
-        lat, lng,
-        accuracy: Math.round(pos.coords.accuracy || 0),
-        lastSeen: ts,
-        visits: firebase.firestore.FieldValue.increment(1)
+        device_id: deviceId,
+        agent: store.get(KEY.agent) || '',
+        lat: String(lat),
+        lng: String(lng),
+        accuracy: String(Math.round(pos.coords.accuracy || 0)),
+        area: place.area || '',
+        district: place.district || '',
+        country: place.country || '',
+        last_seen: now
       };
-      const agent = store.get(KEY.agent);
-      if (agent) data.agent = agent;
-      if (place.area) data.area = place.area;
-      if (place.district) data.district = place.district;
-      if (place.country) data.country = place.country;
-      if (!store.get(KEY.sent)) data.firstSeen = ts;
 
-      await db.collection(COLLECTION).doc(deviceId).set(data, { merge: true });
-      store.set(KEY.sent, '1');
+      const existing = await findRow();
+      let res;
+      if (existing) {
+        // আগের সারি আপডেট: ভিজিট +১, প্রথম দেখার সময় অপরিবর্তিত
+        data.visits = String((parseInt(existing.visits, 10) || 0) + 1);
+        if (!data.agent) delete data.agent;
+        res = await fetch(SHEETDB_URL + '/device_id/' + encodeURIComponent(deviceId), {
+          method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify({ data })
+        });
+      } else {
+        // নতুন সারি
+        data.first_seen = now;
+        data.visits = '1';
+        res = await fetch(SHEETDB_URL, {
+          method: 'POST', headers: JSON_HEADERS, body: JSON.stringify({ data: [data] })
+        });
+      }
+      if (!res.ok) throw new Error('SheetDB ' + res.status);
     } catch (err) {
       console.warn('Location not saved', err);
     }

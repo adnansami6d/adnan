@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Admin — Locations</title>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<style>
+  body{font-family:Inter,system-ui,sans-serif;margin:0;padding:16px;background:#f5f6f8;color:#111}
+  h1{font-size:20px;margin:0 0 12px} h2{font-size:15px;margin:20px 0 8px}
+  .card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 2px 10px rgba(0,0,0,.05);max-width:760px;margin:0 auto 12px}
+  input,select,button{font:inherit;padding:10px 12px;border-radius:10px;border:1px solid #d5d8de;box-sizing:border-box}
+  button{background:#111;color:#fff;border:0;cursor:pointer}
+  #login input{display:block;width:100%;margin-bottom:8px}
+  table{width:100%;border-collapse:collapse;font-size:14px} td,th{padding:7px 4px;border-bottom:1px solid #eee;text-align:left}
+  .wrap{overflow-x:auto} .muted{color:#667;font-size:13px} .err{color:#c0334d;font-size:13px}
+  .top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="card"><h1>Where our agents reached</h1>
+
+<form id="login">
+  <input id="email" type="email" placeholder="Admin email" autocomplete="username" required>
+  <input id="pass" type="password" placeholder="Password" autocomplete="current-password" required>
+  <button type="submit">Sign in</button>
+  <p id="err" class="err"></p>
+</form>
+
+<div id="dash" hidden>
+  <div class="top">
+    <select id="agent"><option value="">All agents</option></select>
+    <span><span id="total" class="muted"></span> <button id="out" type="button">Sign out</button></span>
+  </div>
+  <h2>By area</h2><div class="wrap"><table id="areas"></table></div>
+  <h2>By agent</h2><div class="wrap"><table id="agents"></table></div>
+  <h2>Latest visitors</h2><div class="wrap"><table id="recent"></table></div>
+</div></div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "PASTE_FULL_API_KEY_HERE",
+  authDomain: "chat-70f4c.firebaseapp.com",
+  projectId: "chat-70f4c",
+  storageBucket: "chat-70f4c.firebasestorage.app",
+  messagingSenderId: "984842293346",
+  appId: "PASTE_APP_ID_FROM_FIREBASE_CONSOLE"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth(), db = firebase.firestore();
+const $ = id => document.getElementById(id);
+let rows = [];
+
+$('login').addEventListener('submit', async e => {
+  e.preventDefault(); $('err').textContent = '';
+  try { await auth.signInWithEmailAndPassword($('email').value, $('pass').value); }
+  catch (_) { $('err').textContent = 'Sign in failed'; }
+});
+$('out').addEventListener('click', () => auth.signOut());
+$('agent').addEventListener('change', render);
+auth.onAuthStateChanged(u => { $('login').hidden = !!u; $('dash').hidden = !u; if (u) load(); });
+
+async function load() {
+  const snap = await db.collection('visitors').orderBy('lastSeen', 'desc').limit(2000).get();
+  rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const names = [...new Set(rows.map(r => r.agent).filter(Boolean))].sort();
+  $('agent').innerHTML = '<option value="">All agents</option>' +
+    names.map(n => `<option>${n}</option>`).join('');   // নাম শুধু A-Z 0-9 _ - হয়
+  render();
+}
+
+function tally(list, fn) {
+  const m = {};
+  list.forEach(r => { const k = fn(r); m[k] = (m[k] || 0) + 1; });
+  return Object.entries(m).sort((a, b) => b[1] - a[1]);
+}
+function fill(table, head, data) {
+  table.innerHTML = '';
+  const add = (cells, tag) => { const tr = table.insertRow(); cells.forEach(c => { const el = document.createElement(tag); el.textContent = c; tr.appendChild(el); }); return tr; };
+  add(head, 'th'); data.forEach(d => add(d, 'td'));
+}
+const place = r => r.area ? r.area + (r.district ? ', ' + r.district : '') : 'Unknown';
+
+function render() {
+  const a = $('agent').value;
+  const list = a ? rows.filter(r => r.agent === a) : rows;
+  $('total').textContent = list.length + ' visitors';
+  fill($('areas'), ['Area', 'Visitors'], tally(list, place));
+  fill($('agents'), ['Agent', 'Visitors'], tally(list, r => r.agent || 'No agent'));
+  fill($('recent'), ['When', 'Agent', 'Area'], list.slice(0, 100).map(r => [
+    r.lastSeen ? r.lastSeen.toDate().toLocaleString() : '', r.agent || '-', place(r)
+  ]));
+  // প্রতি সারিতে ম্যাপ লিংক
+  [...$('recent').rows].slice(1).forEach((tr, i) => {
+    const r = list[i], link = document.createElement('a');
+    link.href = `https://www.google.com/maps?q=${r.lat},${r.lng}`; link.target = '_blank'; link.rel = 'noopener';
+    link.textContent = 'Map'; tr.insertCell().appendChild(link);
+  });
+}
+</script>
+</body>
+</html>
